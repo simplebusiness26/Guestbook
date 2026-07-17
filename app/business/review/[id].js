@@ -4,7 +4,8 @@ View,
 Text,
 TextInput,
 Pressable,
-StyleSheet
+StyleSheet,
+Alert
 } from "react-native";
 
 import {useLocalSearchParams, router} from "expo-router";
@@ -15,7 +16,6 @@ export default function Review(){
 
 const {id}=useLocalSearchParams();
 
-
 const [name,setName]=useState("");
 const [comment,setComment]=useState("");
 const [rating,setRating]=useState(5);
@@ -24,8 +24,19 @@ const [rating,setRating]=useState(5);
 
 async function submitReview(){
 
+if(!name || !comment){
 
-const {error}=await supabase
+Alert.alert(
+"Missing information",
+"Please add your name and review"
+);
+
+return;
+
+}
+
+
+const {data,error}=await supabase
 .from("reviews")
 .insert({
 
@@ -34,15 +45,29 @@ name:name,
 rating:rating,
 comment:comment
 
-});
+})
+.select();
+
 
 
 if(error){
 
 console.log(error);
+
+Alert.alert(
+"Error",
+error.message
+);
+
 return;
 
 }
+
+
+Alert.alert(
+"Success",
+"Review submitted"
+);
 
 
 router.back();
@@ -63,15 +88,10 @@ Leave a Review
 
 
 <TextInput
-
 style={styles.input}
-
 placeholder="Your name"
-
 value={name}
-
 onChangeText={setName}
-
 />
 
 
@@ -82,7 +102,6 @@ Rating
 
 
 <View style={styles.stars}>
-
 
 {[1,2,3,4,5].map((star)=>(
 
@@ -98,7 +117,6 @@ onPress={()=>setRating(star)}
 </Pressable>
 
 ))}
-
 
 </View>
 
@@ -131,7 +149,6 @@ onPress={submitReview}
 <Text style={styles.buttonText}>
 Submit Review
 </Text>
-
 
 </Pressable>
 
