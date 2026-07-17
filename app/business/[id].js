@@ -147,7 +147,21 @@ export default function BusinessDetails(){
 
       ))}
 
+<Pressable
 
+style={styles.button}
+
+onPress={() =>
+router.push(`/business/review/${id}`)
+}
+
+>
+
+<Text style={styles.buttonText}>
+✍️ Leave Review
+</Text>
+
+</Pressable>
 
     </ScrollView>
 
