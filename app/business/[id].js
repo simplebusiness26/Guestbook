@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  StyleSheet,
   ActivityIndicator,
-  Pressable,
-  Linking
+  ScrollView
 } from "react-native";
 
 import { useLocalSearchParams } from "expo-router";
@@ -14,154 +13,145 @@ import { supabase } from "../../services/supabase";
 
 export default function BusinessDetails(){
 
-const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams();
 
-const [business,setBusiness] = useState(null);
+  const [business,setBusiness] = useState(null);
+  const [reviews,setReviews] = useState([]);
 
 
+  useEffect(()=>{
+    loadBusiness();
+    loadReviews();
+  },[]);
 
-useEffect(()=>{
 
-loadBusiness();
 
-},[]);
+  async function loadBusiness(){
 
+    const {data,error}=await supabase
+      .from("businesses")
+      .select("*")
+      .eq("id",id)
+      .single();
 
 
-async function loadBusiness(){
+    if(error){
+      console.log(error);
+      return;
+    }
 
-const {data,error}=await supabase
 
-.from("businesses")
+    setBusiness(data);
 
-.select("*")
+  }
 
-.eq("id",id)
 
-.single();
 
+  async function loadReviews(){
 
+    const {data,error}=await supabase
+      .from("reviews")
+      .select("*")
+      .eq("business_id",id)
+      .order("created_at",{ascending:false});
 
-if(error){
 
-console.log(error);
+    if(error){
+      console.log(error);
+      return;
+    }
 
-return;
 
-}
+    setReviews(data || []);
 
+  }
 
-setBusiness(data);
 
 
-}
+  if(!business){
 
+    return(
+      <View style={styles.loading}>
+        <ActivityIndicator size="large"/>
+      </View>
+    );
 
+  }
 
-if(!business){
 
-return(
 
-<View style={styles.loading}>
+  return(
 
-<ActivityIndicator size="large"/>
+    <ScrollView style={styles.container}>
 
-</View>
 
-);
+      <Text style={styles.name}>
+        {business.name}
+      </Text>
 
-}
 
+      <Text style={styles.category}>
+        {business.category}
+      </Text>
 
 
-return(
+      <Text style={styles.rating}>
+        ⭐ {business.rating || "No rating"}
+      </Text>
 
-<View style={styles.container}>
 
+      <Text style={styles.description}>
+        {business.description}
+      </Text>
 
-<Text style={styles.name}>
-{business.name}
-</Text>
 
+      <Text style={styles.heading}>
+        Reviews
+      </Text>
 
-<Text style={styles.category}>
-{business.category}
-</Text>
 
 
-<Text style={styles.rating}>
-⭐ {business.rating || "No rating"} 
-({business.review_count || 0} reviews)
-</Text>
+      {reviews.length === 0 &&
 
+        <Text>
+          No reviews yet. Be the first!
+        </Text>
 
+      }
 
-<Text style={styles.description}>
-{business.description}
-</Text>
 
 
+      {reviews.map((review)=>(
 
-<Text style={styles.info}>
-📍 {business.address}
-</Text>
+        <View 
+          key={review.id}
+          style={styles.review}
+        >
 
+          <Text style={styles.stars}>
+            {"⭐".repeat(review.rating || 0)}
+          </Text>
 
-{business.opening_hours &&
 
-<Text style={styles.info}>
-🕒 {business.opening_hours}
-</Text>
+          <Text style={styles.comment}>
+            {review.comment}
+          </Text>
 
-}
 
+          <Text>
+            - {review.name || "Guest"}
+          </Text>
 
 
-{business.phone &&
+        </View>
 
-<Pressable
-onPress={()=>Linking.openURL(`tel:${business.phone}`)}
->
+      ))}
 
-<Text style={styles.link}>
-📞 {business.phone}
-</Text>
 
-</Pressable>
 
-}
+    </ScrollView>
 
-
-
-{business.website &&
-
-<Pressable
-onPress={()=>Linking.openURL(business.website)}
->
-
-<Text style={styles.link}>
-🌐 Visit Website
-</Text>
-
-</Pressable>
-
-}
-
-
-
-<Pressable style={styles.button}>
-
-<Text style={styles.buttonText}>
-✍️ Leave Review
-</Text>
-
-</Pressable>
-
-
-
-</View>
-
-);
+  );
 
 }
 
@@ -177,7 +167,6 @@ alignItems:"center"
 
 
 container:{
-flex:1,
 padding:25
 },
 
@@ -202,35 +191,34 @@ marginTop:15
 
 description:{
 fontSize:17,
-marginTop:20,
-lineHeight:24
+marginTop:20
 },
 
 
-info:{
-fontSize:16,
-marginTop:15
-},
-
-
-link:{
-fontSize:17,
-marginTop:15
-},
-
-
-button:{
+heading:{
+fontSize:26,
+fontWeight:"bold",
 marginTop:30,
-padding:16,
-borderRadius:10,
-backgroundColor:"#222"
+marginBottom:15
 },
 
 
-buttonText:{
-color:"white",
-textAlign:"center",
+review:{
+padding:15,
+borderWidth:1,
+borderRadius:10,
+marginBottom:15
+},
+
+
+stars:{
 fontSize:18
+},
+
+
+comment:{
+fontSize:16,
+marginVertical:10
 }
 
 
