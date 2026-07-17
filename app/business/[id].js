@@ -4,7 +4,8 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  ScrollView
+  ScrollView,
+  Pressable
 } from "react-native";
 
 import { useLocalSearchParams, router } from "expo-router";
@@ -147,21 +148,25 @@ export default function BusinessDetails(){
 
       ))}
 
-<Pressable
 
-style={styles.button}
 
-onPress={() =>
-router.push(`/business/review/${id}`)
-}
+      <Pressable
 
->
+        style={styles.button}
 
-<Text style={styles.buttonText}>
-✍️ Leave Review
-</Text>
+        onPress={() =>
+          router.push(`/business/review/${id}`)
+        }
 
-</Pressable>
+      >
+
+        <Text style={styles.buttonText}>
+          ✍️ Leave Review
+        </Text>
+
+      </Pressable>
+
+
 
     </ScrollView>
 
@@ -233,6 +238,21 @@ fontSize:18
 comment:{
 fontSize:16,
 marginVertical:10
+},
+
+
+button:{
+marginTop:30,
+padding:16,
+borderRadius:10,
+backgroundColor:"#222"
+},
+
+
+buttonText:{
+color:"white",
+textAlign:"center",
+fontSize:18
 }
 
 
