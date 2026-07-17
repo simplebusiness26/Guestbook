@@ -7,7 +7,7 @@ import {
   ScrollView
 } from "react-native";
 
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "../../services/supabase";
 
 
