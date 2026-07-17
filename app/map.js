@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, Text } from "react-native";
 import MapView, { Marker } from "react-native-maps";
@@ -65,22 +66,19 @@ longitudeDelta:0.03
 {places.map((place)=>(
 
 
+
+
 <Marker
-
 key={place.id}
-
 coordinate={{
-
 latitude:place.latitude,
-
 longitude:place.longitude
-
 }}
-
 title={place.name}
-
 description={place.category}
-
+onCalloutPress={() =>
+router.push(`/business/${place.id}`)
+}
 />
 
 
