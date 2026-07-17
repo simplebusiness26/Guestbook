@@ -5,81 +5,116 @@ import { router } from "expo-router";
 import { supabase } from "../services/supabase";
 
 
-export default function MapScreen() {
+export default function MapScreen(){
 
-  const [places, setPlaces] = useState([]);
-
-
-  useEffect(() => {
-    loadPlaces();
-  }, []);
+const [businesses,setBusinesses]=useState([]);
+const [properties,setProperties]=useState([]);
 
 
-  async function loadPlaces() {
+useEffect(()=>{
 
-    const { data, error } = await supabase
-      .from("businesses")
-      .select("*");
+loadPlaces();
 
-
-    if(error){
-      console.log(error);
-      return;
-    }
+},[]);
 
 
-    setPlaces(data);
 
-  }
+async function loadPlaces(){
 
-
-  return (
-
-    <MapView
-
-      style={styles.map}
-
-      initialRegion={{
-        latitude:50.8225,
-        longitude:-0.1372,
-        latitudeDelta:0.05,
-        longitudeDelta:0.05
-      }}
-
-    >
-
-      {places.map((place)=>(
-
-        <Marker
-
-          key={place.id}
-
-          coordinate={{
-            latitude:place.latitude,
-            longitude:place.longitude
-          }}
-
-          title={place.name}
-
-          description={place.category}
-
-          onCalloutPress={() =>
-            router.push(`/business/${place.id}`)
-          }
-
-        />
-
-      ))}
+const businessesResult = await supabase
+.from("businesses")
+.select("*");
 
 
-    </MapView>
+const propertiesResult = await supabase
+.from("properties")
+.select("*");
 
-  );
+
+setBusinesses(businessesResult.data || []);
+
+setProperties(propertiesResult.data || []);
 
 }
 
 
-const styles = StyleSheet.create({
+
+return(
+
+<MapView
+
+style={styles.map}
+
+initialRegion={{
+latitude:50.8225,
+longitude:-0.1372,
+latitudeDelta:0.05,
+longitudeDelta:0.05
+}}
+
+>
+
+
+{businesses.map(place=>(
+
+<Marker
+
+key={`business-${place.id}`}
+
+coordinate={{
+latitude:place.latitude,
+longitude:place.longitude
+}}
+
+title={place.name}
+
+description={place.category}
+
+onCalloutPress={()=>
+router.push(`/business/${place.id}`)
+}
+
+/>
+
+))}
+
+
+
+{properties.map(property=>(
+
+<Marker
+
+key={`property-${property.id}`}
+
+coordinate={{
+latitude:property.latitude,
+longitude:property.longitude
+}}
+
+title={property.property_name}
+
+description="Airbnb Stay"
+
+pinColor="blue"
+
+onCalloutPress={()=>
+router.push(`/property/${property.id}`)
+}
+
+/>
+
+))}
+
+
+</MapView>
+
+);
+
+}
+
+
+
+const styles=StyleSheet.create({
 
 map:{
 flex:1
