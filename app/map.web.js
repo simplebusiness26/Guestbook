@@ -1,115 +1,158 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
-import { router } from "expo-router";
-import { supabase } from "../services/supabase";
+import React,{useEffect,useState} from "react";
+import {
+View,
+Text,
+StyleSheet,
+Pressable
+} from "react-native";
+
+import {router} from "expo-router";
+import {supabase} from "../services/supabase";
 
 
-export default function MapScreen() {
+export default function MapScreen(){
 
-  const [places, setPlaces] = useState([]);
-
-
-  useEffect(() => {
-    loadPlaces();
-  }, []);
+const [businesses,setBusinesses]=useState([]);
+const [properties,setProperties]=useState([]);
 
 
-  async function loadPlaces() {
 
-    const { data, error } = await supabase
-      .from("businesses")
-      .select("*");
+useEffect(()=>{
 
+loadPlaces();
 
-    if(error){
-      console.log(error);
-      return;
-    }
+},[]);
 
 
-    setPlaces(data);
 
-  }
+async function loadPlaces(){
 
-
-  return (
-
-    <View style={styles.container}>
-
-
-      <Text style={styles.title}>
-        🗺️ Guestbook Map Preview
-      </Text>
+const businessesResult =
+await supabase
+.from("businesses")
+.select("*");
 
 
-      <Text style={styles.subtitle}>
-        Local places
-      </Text>
+const propertiesResult =
+await supabase
+.from("properties")
+.select("*");
 
 
-      {places.map((place)=>(
+setBusinesses(businessesResult.data || []);
 
-        <Pressable
-
-          key={place.id}
-
-          style={styles.card}
-
-          onPress={() =>
-            router.push(`/business/${place.id}`)
-          }
-
-        >
-
-          <Text style={styles.name}>
-            📍 {place.name}
-          </Text>
-
-          <Text>
-            {place.category}
-          </Text>
-
-
-        </Pressable>
-
-      ))}
-
-
-    </View>
-
-  );
+setProperties(propertiesResult.data || []);
 
 }
 
 
-const styles = StyleSheet.create({
+
+return(
+
+<View style={styles.container}>
+
+
+<Text style={styles.title}>
+🗺️ Guestbook Map
+</Text>
+
+
+<Text style={styles.section}>
+Local Places
+</Text>
+
+
+{businesses.map(place=>(
+
+<Pressable
+
+key={place.id}
+
+style={styles.card}
+
+onPress={()=>
+router.push(`/business/${place.id}`)
+}
+
+>
+
+<Text>
+📍 {place.name}
+</Text>
+
+<Text>
+{place.category}
+</Text>
+
+</Pressable>
+
+))}
+
+
+
+<Text style={styles.section}>
+Airbnb Stays
+</Text>
+
+
+
+{properties.map(property=>(
+
+<Pressable
+
+key={property.id}
+
+style={styles.card}
+
+onPress={()=>
+router.push(`/property/${property.id}`)
+}
+
+>
+
+<Text>
+🏠 {property.property_name}
+</Text>
+
+<Text>
+{property.address}
+</Text>
+
+</Pressable>
+
+))}
+
+
+</View>
+
+);
+
+}
+
+
+
+const styles=StyleSheet.create({
 
 container:{
-flex:1,
 padding:20
 },
 
 title:{
 fontSize:28,
-fontWeight:"bold",
+fontWeight:"bold"
+},
+
+section:{
+fontSize:22,
+marginTop:20,
 marginBottom:10
 },
 
-subtitle:{
-fontSize:18,
-marginBottom:20
-},
-
 card:{
-padding:15,
 borderWidth:1,
 borderRadius:10,
-marginBottom:15
-},
-
-name:{
-fontSize:18,
-fontWeight:"bold"
+padding:15,
+marginBottom:10
 }
 
 });
