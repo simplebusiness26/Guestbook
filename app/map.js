@@ -21,19 +21,31 @@ loadPlaces();
 
 async function loadPlaces(){
 
-const businessesResult = await supabase
+
+const {data:businessData,error:businessError}=await supabase
 .from("businesses")
 .select("*");
 
 
-const propertiesResult = await supabase
+const {data:propertyData,error:propertyError}=await supabase
 .from("properties")
 .select("*");
 
 
-setBusinesses(businessesResult.data || []);
+if(businessError){
+console.log("Business error:",businessError);
+}
 
-setProperties(propertiesResult.data || []);
+
+if(propertyError){
+console.log("Property error:",propertyError);
+}
+
+
+setBusinesses(businessData || []);
+
+setProperties(propertyData || []);
+
 
 }
 
@@ -55,7 +67,14 @@ longitudeDelta:0.05
 >
 
 
-{businesses.map(place=>(
+{businesses.map(place=>{
+
+if(!place.latitude || !place.longitude){
+return null;
+}
+
+
+return(
 
 <Marker
 
@@ -68,7 +87,7 @@ longitude:place.longitude
 
 title={place.name}
 
-description={place.category}
+description={place.category || "Local place"}
 
 onCalloutPress={()=>
 router.push(`/business/${place.id}`)
@@ -76,11 +95,21 @@ router.push(`/business/${place.id}`)
 
 />
 
-))}
+)
+
+})}
 
 
 
-{properties.map(property=>(
+
+{properties.map(property=>{
+
+if(!property.latitude || !property.longitude){
+return null;
+}
+
+
+return(
 
 <Marker
 
@@ -91,7 +120,7 @@ latitude:property.latitude,
 longitude:property.longitude
 }}
 
-title={property.property_name}
+title={property.name}
 
 description="Airbnb Stay"
 
@@ -103,7 +132,10 @@ router.push(`/property/${property.id}`)
 
 />
 
-))}
+)
+
+})}
+
 
 
 </MapView>
