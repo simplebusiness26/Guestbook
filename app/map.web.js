@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from "react";
+import React, {useEffect, useState} from "react";
 import {
 View,
 Text,
@@ -16,7 +16,6 @@ const [businesses,setBusinesses]=useState([]);
 const [properties,setProperties]=useState([]);
 
 
-
 useEffect(()=>{
 
 loadPlaces();
@@ -27,21 +26,29 @@ loadPlaces();
 
 async function loadPlaces(){
 
-const businessesResult =
-await supabase
+const {data:businessData,error:businessError}=await supabase
 .from("businesses")
 .select("*");
 
 
-const propertiesResult =
-await supabase
+const {data:propertyData,error:propertyError}=await supabase
 .from("properties")
 .select("*");
 
 
-setBusinesses(businessesResult.data || []);
+if(businessError){
+console.log(businessError);
+}
 
-setProperties(propertiesResult.data || []);
+
+if(propertyError){
+console.log(propertyError);
+}
+
+
+setBusinesses(businessData || []);
+
+setProperties(propertyData || []);
 
 }
 
@@ -81,7 +88,7 @@ router.push(`/business/${place.id}`)
 </Text>
 
 <Text>
-{place.category}
+{place.category || "Local place"}
 </Text>
 
 </Pressable>
@@ -111,16 +118,17 @@ router.push(`/property/${property.id}`)
 >
 
 <Text>
-🏠 {property.property_name}
+🏠 {property.name}
 </Text>
 
 <Text>
-{property.address}
+{property.address || "Airbnb stay"}
 </Text>
 
 </Pressable>
 
 ))}
+
 
 
 </View>
