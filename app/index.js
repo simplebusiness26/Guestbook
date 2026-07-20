@@ -139,6 +139,20 @@ onPress={()=>router.push("/auth/signup")}
 
 >
 
+<Pressable
+
+style={styles.button}
+
+onPress={()=>router.push("/auth/login")}
+
+>
+
+<Text style={styles.text}>
+Login
+</Text>
+
+</Pressable>
+
 <Text style={styles.text}>
 Create Account
 </Text>
