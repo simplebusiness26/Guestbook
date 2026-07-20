@@ -91,6 +91,19 @@ Business Dashboard
 
 </Pressable>
 
+<Pressable
+
+style={styles.button}
+
+onPress={()=>router.push("/admin/claims")}
+
+>
+
+<Text style={styles.text}>
+Admin Claims
+</Text>
+
+</Pressable>
 
 
 </View>
