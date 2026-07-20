@@ -181,7 +181,19 @@ View Public Profile
 
 </Pressable>
 
+<Pressable
 
+style={styles.button}
+
+onPress={()=>router.push("/business/reviews")}
+
+>
+
+<Text style={styles.buttonText}>
+Manage Reviews
+</Text>
+
+</Pressable>
 
 </>
 
