@@ -1,5 +1,3 @@
-import QRCodeGenerator from "../../components/QRCodeGenerator";
-
 import React, {useEffect, useState} from "react";
 import {
 View,
@@ -12,6 +10,7 @@ ActivityIndicator
 
 import {useLocalSearchParams, router} from "expo-router";
 import {supabase} from "../../services/supabase";
+import QRCodeGenerator from "../../components/QRCodeGenerator";
 
 
 export default function PropertyDetails(){
@@ -133,6 +132,26 @@ Hosted by {property.host}
 </Text>
 
 
+<Text style={styles.booking}>
+Booking:
+</Text>
+
+
+<Text>
+{property.booking_url}
+</Text>
+
+
+
+<Text style={styles.qrTitle}>
+Scan for Guestbook
+</Text>
+
+
+<QRCodeGenerator propertyId={propertyId}/>
+
+
+
 <Text style={styles.heading}>
 Reviews ({reviews.length})
 </Text>
@@ -150,27 +169,20 @@ style={styles.review}
 {"⭐".repeat(review.rating)}
 </Text>
 
+
 <Text>
 {review.comment}
 </Text>
+
 
 <Text>
 - {review.name || "Guest"}
 </Text>
 
+
 </View>
 
 ))}
-
-
-
-{reviews.length===0 &&
-
-<Text>
-No reviews yet
-</Text>
-
-}
 
 
 
@@ -222,8 +234,19 @@ marginTop:10
 },
 
 description:{
-marginTop:20,
-fontSize:16
+marginTop:20
+},
+
+booking:{
+fontWeight:"bold",
+marginTop:20
+},
+
+qrTitle:{
+fontSize:22,
+fontWeight:"bold",
+marginTop:30,
+marginBottom:15
 },
 
 heading:{
