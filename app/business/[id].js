@@ -1,43 +1,42 @@
 import React, {useEffect, useState} from "react";
+
 import {
 View,
 Text,
 StyleSheet,
-ScrollView,
-Pressable,
-ActivityIndicator
+ScrollView
 } from "react-native";
 
 import {useLocalSearchParams, router} from "expo-router";
+
 import {supabase} from "../../services/supabase";
+
+import ClaimButton from "../../components/ClaimButton";
 
 
 export default function BusinessDetails(){
 
-const params = useLocalSearchParams();
 
-const businessId = params.id;
+const {id}=useLocalSearchParams();
 
 
 const [business,setBusiness]=useState(null);
+
 const [reviews,setReviews]=useState([]);
 
 
 
 useEffect(()=>{
 
-if(businessId){
-
 loadBusiness();
 loadReviews();
 
-}
-
-},[businessId]);
+},[]);
 
 
 
 async function loadBusiness(){
+
 
 const {data,error}=await supabase
 
@@ -45,7 +44,7 @@ const {data,error}=await supabase
 
 .select("*")
 
-.eq("id",businessId)
+.eq("id",id)
 
 .single();
 
@@ -53,7 +52,7 @@ const {data,error}=await supabase
 
 if(error){
 
-console.log("Business error:",error);
+console.log(error);
 
 return;
 
@@ -68,8 +67,6 @@ setBusiness(data);
 
 async function loadReviews(){
 
-console.log("Loading reviews for business:", businessId);
-
 
 const {data,error}=await supabase
 
@@ -77,7 +74,7 @@ const {data,error}=await supabase
 
 .select("*")
 
-.eq("business_id",businessId)
+.eq("business_id",id)
 
 .order("created_at",{ascending:false});
 
@@ -85,14 +82,11 @@ const {data,error}=await supabase
 
 if(error){
 
-console.log("Review error:",error);
+console.log(error);
 
 return;
 
 }
-
-
-console.log("Reviews found:",data);
 
 
 setReviews(data || []);
@@ -101,18 +95,9 @@ setReviews(data || []);
 
 
 
-
 if(!business){
 
-return(
-
-<View style={styles.loading}>
-
-<ActivityIndicator size="large"/>
-
-</View>
-
-);
+return <Text>Loading...</Text>;
 
 }
 
@@ -128,13 +113,8 @@ return(
 </Text>
 
 
-<Text style={styles.category}>
+<Text>
 {business.category}
-</Text>
-
-
-<Text style={styles.rating}>
-⭐ {business.rating || "No rating"}
 </Text>
 
 
@@ -143,9 +123,13 @@ return(
 </Text>
 
 
-<Text style={styles.address}>
-📍 {business.address}
+<Text>
+{business.address}
 </Text>
+
+
+
+<ClaimButton businessId={id}/>
 
 
 
@@ -155,25 +139,20 @@ Reviews ({reviews.length})
 
 
 
-{reviews.map((review)=>(
+{reviews.map(review=>(
 
 <View
-
 key={review.id}
-
 style={styles.review}
-
 >
 
 <Text>
 {"⭐".repeat(review.rating)}
 </Text>
 
-
-<Text style={styles.comment}>
+<Text>
 {review.comment}
 </Text>
-
 
 <Text>
 - {review.name || "Guest"}
@@ -183,34 +162,6 @@ style={styles.review}
 </View>
 
 ))}
-
-
-
-{reviews.length === 0 &&
-
-<Text>
-No reviews yet
-</Text>
-
-}
-
-
-
-<Pressable
-
-style={styles.button}
-
-onPress={()=>
-router.push(`/business/review/${businessId}`)
-}
-
->
-
-<Text style={styles.buttonText}>
-✍️ Leave Review
-</Text>
-
-</Pressable>
 
 
 
@@ -224,69 +175,30 @@ router.push(`/business/review/${businessId}`)
 
 const styles=StyleSheet.create({
 
-loading:{
-flex:1,
-justifyContent:"center",
-alignItems:"center"
-},
-
 container:{
 padding:20
 },
 
 name:{
-fontSize:32,
+fontSize:30,
 fontWeight:"bold"
 },
 
-category:{
-fontSize:18,
-marginTop:8
-},
-
-rating:{
-fontSize:20,
-marginTop:15
-},
-
 description:{
-fontSize:16,
-marginTop:20
-},
-
-address:{
 marginTop:15
 },
 
 heading:{
-fontSize:25,
+fontSize:24,
 fontWeight:"bold",
-marginTop:30,
-marginBottom:15
+marginTop:30
 },
 
 review:{
 borderWidth:1,
-borderRadius:10,
 padding:15,
-marginBottom:15
-},
-
-comment:{
-marginVertical:10
-},
-
-button:{
-backgroundColor:"#222",
-padding:16,
 borderRadius:10,
-marginTop:20
-},
-
-buttonText:{
-color:"white",
-textAlign:"center",
-fontSize:18
+marginTop:10
 }
 
 });
