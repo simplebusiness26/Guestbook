@@ -8,6 +8,8 @@ ScrollView,
 Pressable
 } from "react-native";
 
+import {router} from "expo-router";
+
 import {supabase} from "../../services/supabase";
 
 
@@ -37,7 +39,15 @@ user
 
 
 
-const {data:claim}=await supabase
+if(!user){
+
+return;
+
+}
+
+
+
+const {data:claim,error:claimError}=await supabase
 
 .from("claims")
 
@@ -51,7 +61,9 @@ const {data:claim}=await supabase
 
 
 
-if(!claim){
+if(claimError){
+
+console.log(claimError);
 
 return;
 
@@ -59,7 +71,7 @@ return;
 
 
 
-const {data}=await supabase
+const {data,error}=await supabase
 
 .from("reviews")
 
@@ -73,6 +85,16 @@ const {data}=await supabase
 ascending:false
 }
 );
+
+
+
+if(error){
+
+console.log(error);
+
+return;
+
+}
 
 
 
@@ -94,6 +116,16 @@ Customer Reviews
 
 
 
+{reviews.length === 0 &&
+
+<Text>
+No reviews yet
+</Text>
+
+}
+
+
+
 {reviews.map(review=>(
 
 <View
@@ -105,27 +137,46 @@ style={styles.card}
 >
 
 
-<Text>
-⭐ {review.rating}
+<Text style={styles.rating}>
+⭐ {review.rating}/5
 </Text>
 
 
-<Text>
+
+<Text style={styles.comment}>
 {review.comment}
 </Text>
 
 
+
 <Text>
-- {review.name}
+- {review.name || "Guest"}
 </Text>
 
 
 
 {review.business_response &&
 
+<View style={styles.response}>
+
 <Text>
-Response:
+Business response:
+</Text>
+
+<Text>
 {review.business_response}
+</Text>
+
+</View>
+
+}
+
+
+
+{review.challenged &&
+
+<Text style={styles.challenge}>
+Review challenged
 </Text>
 
 }
@@ -136,10 +187,16 @@ Response:
 
 style={styles.button}
 
+onPress={()=>
+router.push(
+`/business/review-action?id=${review.id}`
+)
+}
+
 >
 
 <Text style={styles.buttonText}>
-Challenge Review
+Manage Review
 </Text>
 
 </Pressable>
@@ -168,19 +225,39 @@ padding:20
 
 title:{
 fontSize:30,
-fontWeight:"bold"
+fontWeight:"bold",
+marginBottom:20
 },
 
 card:{
 borderWidth:1,
-padding:15,
 borderRadius:10,
-marginTop:15
+padding:15,
+marginBottom:15
+},
+
+rating:{
+fontSize:18
+},
+
+comment:{
+marginTop:10,
+marginBottom:10
+},
+
+response:{
+marginTop:15,
+padding:10
+},
+
+challenge:{
+marginTop:10
 },
 
 button:{
 backgroundColor:"#222",
-padding:10,
+padding:15,
+borderRadius:10,
 marginTop:15
 },
 
