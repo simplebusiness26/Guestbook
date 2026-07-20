@@ -17,7 +17,7 @@ import QRCodeGenerator from "../../components/QRCodeGenerator";
 export default function PropertyDashboard(){
 
 
-const [property,setProperty]=useState(null);
+const [properties,setProperties]=useState([]);
 
 const [status,setStatus]=useState("Loading...");
 
@@ -52,49 +52,21 @@ return;
 
 
 
-const {data:claim,error}=await supabase
-
-.from("claims")
-
-.select("*")
-
-.eq("user_id",user.id)
-
-.eq("status","approved")
-
-.single();
-
-
-
-if(error || !claim){
-
-setStatus("No approved property claim");
-
-return;
-
-}
-
-
-
-setStatus("Approved");
-
-
-
-const {data,error:propertyError}=await supabase
+const {data,error}=await supabase
 
 .from("properties")
 
 .select("*")
 
-.eq("id",claim.property_id)
-
-.single();
+.eq("owner_id",user.id);
 
 
 
-if(propertyError){
+if(error){
 
-console.log(propertyError);
+console.log(error);
+
+setStatus("Error loading properties");
 
 return;
 
@@ -102,7 +74,17 @@ return;
 
 
 
-setProperty(data);
+if(data && data.length > 0){
+
+setProperties(data);
+
+setStatus("Your Properties");
+
+}else{
+
+setStatus("No property listings yet");
+
+}
 
 
 }
@@ -126,9 +108,16 @@ Status: {status}
 
 
 
-{property &&
+{properties.map(property=>(
 
-<>
+
+<View
+
+key={property.id}
+
+style={styles.card}
+
+>
 
 
 <Text style={styles.name}>
@@ -147,6 +136,7 @@ Guest Review QR Code
 </Text>
 
 
+
 <QRCodeGenerator
 
 propertyId={property.id}
@@ -159,12 +149,12 @@ propertyId={property.id}
 
 style={styles.button}
 
-onPress={()=>router.push("/property/edit")}
+onPress={()=>router.push(`/property/${property.id}`)}
 
 >
 
 <Text style={styles.buttonText}>
-Edit Property
+View Public Profile
 </Text>
 
 </Pressable>
@@ -185,6 +175,15 @@ Manage Reviews
 
 </Pressable>
 
+
+
+</View>
+
+
+))}
+
+
+
 <Pressable
 
 style={styles.button}
@@ -198,10 +197,6 @@ onPress={()=>router.push("/property/add")}
 </Text>
 
 </Pressable>
-
-</>
-
-}
 
 
 
@@ -224,16 +219,23 @@ fontSize:30,
 fontWeight:"bold"
 },
 
+card:{
+borderWidth:1,
+borderRadius:10,
+padding:15,
+marginTop:20
+},
+
 name:{
 fontSize:25,
 fontWeight:"bold",
-marginTop:20
+marginTop:10
 },
 
 heading:{
 fontSize:20,
 fontWeight:"bold",
-marginTop:30,
+marginTop:20,
 marginBottom:15
 },
 
