@@ -2,7 +2,9 @@ import React from "react";
 
 import {
 Pressable,
-Text
+Text,
+StyleSheet,
+Alert
 } from "react-native";
 
 import {supabase} from "../services/supabase";
@@ -14,7 +16,7 @@ propertyId
 }){
 
 
-async function claim(){
+async function submitClaim(){
 
 
 const {
@@ -27,7 +29,10 @@ user
 
 if(!user){
 
-alert("Please login first");
+Alert.alert(
+"Login required",
+"Please login before claiming a listing"
+);
 
 return;
 
@@ -55,14 +60,21 @@ if(error){
 
 console.log(error);
 
-alert(error.message);
+Alert.alert(
+"Error",
+error.message
+);
 
 return;
 
 }
 
 
-alert("Claim request submitted");
+
+Alert.alert(
+"Success",
+"Claim request submitted"
+);
 
 
 }
@@ -73,20 +85,13 @@ return(
 
 <Pressable
 
-onPress={claim}
+style={styles.button}
 
-style={{
-backgroundColor:"#222",
-padding:15,
-borderRadius:10
-}}
+onPress={submitClaim}
 
 >
 
-<Text style={{
-color:"white",
-textAlign:"center"
-}}>
+<Text style={styles.text}>
 Claim this listing
 </Text>
 
@@ -96,3 +101,22 @@ Claim this listing
 );
 
 }
+
+
+
+const styles=StyleSheet.create({
+
+button:{
+backgroundColor:"#222",
+padding:15,
+borderRadius:10,
+marginTop:20
+},
+
+text:{
+color:"white",
+textAlign:"center",
+fontWeight:"bold"
+}
+
+});
