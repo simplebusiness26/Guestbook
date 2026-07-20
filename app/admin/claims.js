@@ -57,6 +57,30 @@ setClaims(data || []);
 async function updateClaim(id,status){
 
 
+const {data:claim,error:claimError}=await supabase
+
+.from("claims")
+
+.select("*")
+
+.eq("id",id)
+
+.single();
+
+
+
+if(claimError){
+
+console.log(claimError);
+
+return;
+
+}
+
+
+
+// Update claim status
+
 const {error}=await supabase
 
 .from("claims")
@@ -80,143 +104,73 @@ return;
 }
 
 
-loadClaims();
+
+// If approved link owner to listing
+
+if(status==="approved"){
+
+
+
+// Business claim
+
+if(claim.business_id){
+
+
+const {error:businessError}=await supabase
+
+.from("businesses")
+
+.update({
+
+owner_id:claim.user_id
+
+})
+
+.eq("id",claim.business_id);
+
+
+
+if(businessError){
+
+console.log(businessError);
+
+}
+
+}
+
+
+
+// Property claim
+
+if(claim.property_id){
+
+
+const {error:propertyError}=await supabase
+
+.from("properties")
+
+.update({
+
+owner_id:claim.user_id
+
+})
+
+.eq("id",claim.property_id);
+
+
+
+if(propertyError){
+
+console.log(propertyError);
+
+}
+
+}
+
 
 
 }
 
 
 
-return(
-
-<ScrollView style={styles.container}>
-
-
-<Text style={styles.title}>
-Claim Requests
-</Text>
-
-
-
-{claims.map(claim=>(
-
-<View
-
-key={claim.id}
-
-style={styles.card}
-
->
-
-
-<Text>
-Claim ID:
-{claim.id}
-</Text>
-
-
-<Text>
-Business:
-{claim.business_id}
-</Text>
-
-
-<Text>
-Property:
-{claim.property_id}
-</Text>
-
-
-
-<Pressable
-
-style={styles.approve}
-
-onPress={()=>
-updateClaim(
-claim.id,
-"approved"
-)
-}
-
->
-
-<Text style={styles.text}>
-Approve
-</Text>
-
-</Pressable>
-
-
-
-<Pressable
-
-style={styles.reject}
-
-onPress={()=>
-updateClaim(
-claim.id,
-"rejected"
-)
-}
-
->
-
-<Text style={styles.text}>
-Reject
-</Text>
-
-</Pressable>
-
-
-
-</View>
-
-))}
-
-
-
-</ScrollView>
-
-);
-
-}
-
-
-
-const styles=StyleSheet.create({
-
-container:{
-padding:20
-},
-
-title:{
-fontSize:30,
-fontWeight:"bold"
-},
-
-card:{
-borderWidth:1,
-borderRadius:10,
-padding:15,
-marginTop:15
-},
-
-approve:{
-backgroundColor:"green",
-padding:12,
-marginTop:10
-},
-
-reject:{
-backgroundColor:"red",
-padding:12,
-marginTop:10
-},
-
-text:{
-color:"white",
-textAlign:"center"
-}
-
-});
+load
