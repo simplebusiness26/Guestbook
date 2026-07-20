@@ -1,12 +1,32 @@
 import React from "react";
+
 import QRCode from "react-native-qrcode-svg";
 
 
-export default function QRCodeGenerator({propertyId}){
+export default function QRCodeGenerator({
+propertyId,
+businessId
+}){
 
 
-const url = 
-`https://guestbook.app/guest/${propertyId}`;
+let url="";
+
+
+
+if(propertyId){
+
+url=`https://guestbook.app/guest/${propertyId}`;
+
+}
+
+
+
+if(businessId){
+
+url=`https://guestbook.app/business/${businessId}`;
+
+}
+
 
 
 return(
