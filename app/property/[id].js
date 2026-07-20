@@ -3,34 +3,41 @@ import {
 View,
 Text,
 StyleSheet,
-ActivityIndicator,
 ScrollView,
 Pressable,
-Linking
+ActivityIndicator
 } from "react-native";
 
-import {useLocalSearchParams} from "expo-router";
+import {useLocalSearchParams, router} from "expo-router";
 import {supabase} from "../../services/supabase";
 
 
 export default function PropertyDetails(){
 
-const {id}=useLocalSearchParams();
+const params = useLocalSearchParams();
+
+const propertyId = params.id;
+
 
 const [property,setProperty]=useState(null);
+const [reviews,setReviews]=useState([]);
 
 
 
 useEffect(()=>{
 
-loadProperty();
+if(propertyId){
 
-},[]);
+loadProperty();
+loadReviews();
+
+}
+
+},[propertyId]);
 
 
 
 async function loadProperty(){
-
 
 const {data,error}=await supabase
 
@@ -38,7 +45,7 @@ const {data,error}=await supabase
 
 .select("*")
 
-.eq("id",id)
+.eq("id",propertyId)
 
 .single();
 
@@ -46,7 +53,7 @@ const {data,error}=await supabase
 
 if(error){
 
-console.log(error);
+console.log("Property error:",error);
 
 return;
 
@@ -55,6 +62,34 @@ return;
 
 setProperty(data);
 
+}
+
+
+
+async function loadReviews(){
+
+const {data,error}=await supabase
+
+.from("reviews")
+
+.select("*")
+
+.eq("property_id",propertyId)
+
+.order("created_at",{ascending:false});
+
+
+
+if(error){
+
+console.log("Review error:",error);
+
+return;
+
+}
+
+
+setReviews(data || []);
 
 }
 
@@ -82,15 +117,13 @@ return(
 
 
 <Text style={styles.name}>
-{property.property_name}
+{property.name}
 </Text>
 
 
-
-<Text style={styles.rating}>
-⭐ {property.rating || "No rating"}
+<Text style={styles.host}>
+Hosted by {property.host}
 </Text>
-
 
 
 <Text style={styles.description}>
@@ -98,10 +131,44 @@ return(
 </Text>
 
 
-
-<Text style={styles.info}>
-📍 {property.address}
+<Text style={styles.heading}>
+Reviews ({reviews.length})
 </Text>
+
+
+
+{reviews.map((review)=>(
+
+<View
+key={review.id}
+style={styles.review}
+>
+
+<Text>
+{"⭐".repeat(review.rating)}
+</Text>
+
+<Text>
+{review.comment}
+</Text>
+
+<Text>
+- {review.name || "Guest"}
+</Text>
+
+</View>
+
+))}
+
+
+
+{reviews.length===0 &&
+
+<Text>
+No reviews yet
+</Text>
+
+}
 
 
 
@@ -110,13 +177,13 @@ return(
 style={styles.button}
 
 onPress={()=>
-Linking.openURL(property.booking_url)
+router.push(`/property/review/${propertyId}`)
 }
 
 >
 
 <Text style={styles.buttonText}>
-🔗 Book This Stay
+✍️ Leave Review
 </Text>
 
 </Pressable>
@@ -140,7 +207,7 @@ alignItems:"center"
 },
 
 container:{
-padding:25
+padding:20
 },
 
 name:{
@@ -148,32 +215,38 @@ fontSize:32,
 fontWeight:"bold"
 },
 
-rating:{
-fontSize:20,
-marginTop:15
+host:{
+marginTop:10
 },
 
 description:{
-fontSize:17,
-marginTop:20
-},
-
-info:{
 marginTop:20,
 fontSize:16
 },
 
-button:{
-marginTop:30,
-padding:16,
+heading:{
+fontSize:25,
+fontWeight:"bold",
+marginTop:30
+},
+
+review:{
+borderWidth:1,
 borderRadius:10,
-backgroundColor:"#222"
+padding:15,
+marginTop:15
+},
+
+button:{
+marginTop:25,
+backgroundColor:"#222",
+padding:16,
+borderRadius:10
 },
 
 buttonText:{
 color:"white",
-textAlign:"center",
-fontSize:18
+textAlign:"center"
 }
 
 });
