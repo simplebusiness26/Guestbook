@@ -1,4 +1,5 @@
 import React, {useState} from "react";
+
 import {
 View,
 Text,
@@ -9,20 +10,26 @@ Alert
 } from "react-native";
 
 import {useLocalSearchParams, router} from "expo-router";
+
 import {supabase} from "../../../services/supabase";
 
 
 export default function Review(){
 
+
 const {id}=useLocalSearchParams();
 
+
 const [name,setName]=useState("");
+
 const [comment,setComment]=useState("");
+
 const [rating,setRating]=useState(5);
 
 
 
 async function submitReview(){
+
 
 if(!name || !comment){
 
@@ -36,16 +43,46 @@ return;
 }
 
 
+
+const {
+data:{
+user
+}
+}=await supabase.auth.getUser();
+
+
+
+if(!user){
+
+Alert.alert(
+"Login required",
+"Please create an account before leaving a review"
+);
+
+return;
+
+}
+
+
+
 const {data,error}=await supabase
+
 .from("reviews")
+
 .insert({
 
 business_id:id,
+
+user_id:user.id,
+
 name:name,
+
 rating:rating,
+
 comment:comment
 
 })
+
 .select();
 
 
@@ -64,10 +101,12 @@ return;
 }
 
 
+
 Alert.alert(
 "Success",
 "Review submitted"
 );
+
 
 
 router.back();
@@ -87,11 +126,17 @@ Leave a Review
 </Text>
 
 
+
 <TextInput
+
 style={styles.input}
+
 placeholder="Your name"
+
 value={name}
+
 onChangeText={setName}
+
 />
 
 
@@ -101,13 +146,17 @@ Rating
 </Text>
 
 
+
 <View style={styles.stars}>
 
 {[1,2,3,4,5].map((star)=>(
 
 <Pressable
+
 key={star}
+
 onPress={()=>setRating(star)}
+
 >
 
 <Text style={styles.star}>
