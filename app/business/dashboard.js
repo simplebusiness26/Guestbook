@@ -14,17 +14,19 @@ export default function BusinessDashboard(){
 
 const [business,setBusiness]=useState(null);
 
+const [status,setStatus]=useState("");
+
 
 
 useEffect(()=>{
 
-loadBusiness();
+loadDashboard();
 
 },[]);
 
 
 
-async function loadBusiness(){
+async function loadDashboard(){
 
 
 const {
@@ -51,7 +53,7 @@ const {data:claim,error}=await supabase
 
 .eq("user_id",user.id)
 
-.eq("status","pending")
+.eq("status","approved")
 
 .single();
 
@@ -59,11 +61,15 @@ const {data:claim,error}=await supabase
 
 if(error){
 
-console.log(error);
+setStatus("No approved business claim");
 
 return;
 
 }
+
+
+
+setStatus("Approved");
 
 
 
@@ -92,24 +98,6 @@ setBusiness(data);
 
 
 
-if(!business){
-
-return(
-
-<View style={styles.container}>
-
-<Text>
-No claimed business yet
-</Text>
-
-</View>
-
-);
-
-}
-
-
-
 return(
 
 <View style={styles.container}>
@@ -120,19 +108,35 @@ Business Dashboard
 </Text>
 
 
+
+<Text>
+Status: {status}
+</Text>
+
+
+
+{business &&
+
+<>
+
 <Text style={styles.name}>
 {business.name}
 </Text>
 
 
 <Text>
-Category: {business.category}
+{business.category}
 </Text>
 
 
 <Text>
-Claim status: Pending
+Manage your business here
 </Text>
+
+</>
+
+}
+
 
 
 </View>
