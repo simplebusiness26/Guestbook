@@ -11,6 +11,8 @@ import {supabase} from "../../services/supabase";
 
 import {router} from "expo-router";
 
+import QRCodeGenerator from "../../components/QRCodeGenerator";
+
 
 export default function PropertyDashboard(){
 
@@ -78,10 +80,7 @@ setStatus("Approved");
 
 
 
-if(claim.property_id){
-
-
-const {data,error}=await supabase
+const {data,error:propertyError}=await supabase
 
 .from("properties")
 
@@ -93,9 +92,9 @@ const {data,error}=await supabase
 
 
 
-if(error){
+if(propertyError){
 
-console.log(error);
+console.log(propertyError);
 
 return;
 
@@ -104,9 +103,6 @@ return;
 
 
 setProperty(data);
-
-
-}
 
 
 }
@@ -145,9 +141,17 @@ Host: {property.host}
 </Text>
 
 
-<Text>
-Manage your property below
+
+<Text style={styles.heading}>
+Guest Review QR Code
 </Text>
+
+
+<QRCodeGenerator
+
+propertyId={property.id}
+
+/>
 
 
 
@@ -161,22 +165,6 @@ onPress={()=>router.push("/property/edit")}
 
 <Text style={styles.buttonText}>
 Edit Property
-</Text>
-
-</Pressable>
-
-
-
-<Pressable
-
-style={styles.button}
-
-onPress={()=>router.push(`/property/${property.id}`)}
-
->
-
-<Text style={styles.buttonText}>
-View Public Profile
 </Text>
 
 </Pressable>
@@ -228,6 +216,13 @@ name:{
 fontSize:25,
 fontWeight:"bold",
 marginTop:20
+},
+
+heading:{
+fontSize:20,
+fontWeight:"bold",
+marginTop:30,
+marginBottom:15
 },
 
 button:{
