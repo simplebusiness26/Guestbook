@@ -3,7 +3,8 @@ import {
 View,
 Text,
 StyleSheet,
-Pressable
+Pressable,
+TextInput
 } from "react-native";
 
 import {router} from "expo-router";
@@ -14,6 +15,9 @@ export default function MapScreen(){
 
 const [businesses,setBusinesses]=useState([]);
 const [properties,setProperties]=useState([]);
+
+const [search,setSearch]=useState("");
+const [category,setCategory]=useState("");
 
 
 useEffect(()=>{
@@ -26,24 +30,14 @@ loadPlaces();
 
 async function loadPlaces(){
 
-const {data:businessData,error:businessError}=await supabase
+const {data:businessData}=await supabase
 .from("businesses")
 .select("*");
 
 
-const {data:propertyData,error:propertyError}=await supabase
+const {data:propertyData}=await supabase
 .from("properties")
 .select("*");
-
-
-if(businessError){
-console.log(businessError);
-}
-
-
-if(propertyError){
-console.log(propertyError);
-}
 
 
 setBusinesses(businessData || []);
@@ -54,22 +48,90 @@ setProperties(propertyData || []);
 
 
 
+const filteredBusinesses = businesses.filter(place=>{
+
+
+const matchesSearch =
+place.name
+?.toLowerCase()
+.includes(search.toLowerCase());
+
+
+const matchesCategory =
+category === "" ||
+place.category === category;
+
+
+return matchesSearch && matchesCategory;
+
+
+});
+
+
+
 return(
 
 <View style={styles.container}>
 
 
 <Text style={styles.title}>
-🗺️ Guestbook Map
+🗺️ Guestbook
 </Text>
+
+
+
+<TextInput
+
+style={styles.search}
+
+placeholder="Search places..."
+
+value={search}
+
+onChangeText={setSearch}
+
+/>
+
+
+
+<View style={styles.categories}>
+
+
+{["Pub","Cafe","Restaurant"].map(item=>(
+
+<Pressable
+
+key={item}
+
+style={styles.category}
+
+onPress={()=>
+setCategory(
+category===item ? "" : item
+)
+}
+
+>
+
+<Text>
+{item}
+</Text>
+
+</Pressable>
+
+))}
+
+
+</View>
+
 
 
 <Text style={styles.section}>
-Local Places
+Businesses
 </Text>
 
 
-{businesses.map(place=>(
+{filteredBusinesses.map(place=>(
 
 <Pressable
 
@@ -83,12 +145,12 @@ router.push(`/business/${place.id}`)
 
 >
 
-<Text>
+<Text style={styles.name}>
 📍 {place.name}
 </Text>
 
 <Text>
-{place.category || "Local place"}
+{place.category}
 </Text>
 
 </Pressable>
@@ -98,9 +160,8 @@ router.push(`/business/${place.id}`)
 
 
 <Text style={styles.section}>
-Airbnb Stays
+Properties
 </Text>
-
 
 
 {properties.map(property=>(
@@ -117,13 +178,15 @@ router.push(`/property/${property.id}`)
 
 >
 
-<Text>
+<Text style={styles.name}>
 🏠 {property.name}
 </Text>
 
+
 <Text>
-{property.address || "Airbnb stay"}
+{property.host}
 </Text>
+
 
 </Pressable>
 
@@ -146,21 +209,45 @@ padding:20
 },
 
 title:{
-fontSize:28,
+fontSize:30,
 fontWeight:"bold"
+},
+
+search:{
+borderWidth:1,
+borderRadius:10,
+padding:15,
+marginTop:20
+},
+
+categories:{
+flexDirection:"row",
+marginTop:15
+},
+
+category:{
+borderWidth:1,
+borderRadius:20,
+padding:10,
+marginRight:10
 },
 
 section:{
 fontSize:22,
-marginTop:20,
-marginBottom:10
+fontWeight:"bold",
+marginTop:25
 },
 
 card:{
 borderWidth:1,
 borderRadius:10,
 padding:15,
-marginBottom:10
+marginTop:10
+},
+
+name:{
+fontSize:18,
+fontWeight:"bold"
 }
 
 });
