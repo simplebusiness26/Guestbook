@@ -17,7 +17,7 @@ import QRCodeGenerator from "../../components/QRCodeGenerator";
 export default function BusinessDashboard(){
 
 
-const [business,setBusiness]=useState(null);
+const [businesses,setBusinesses]=useState([]);
 
 const [status,setStatus]=useState("Loading...");
 
@@ -52,46 +52,13 @@ return;
 
 
 
-const {data:claim,error}=await supabase
-
-.from("claims")
-
-.select("*")
-
-.eq("user_id",user.id)
-
-.eq("status","approved")
-
-.single();
-
-
-
-if(error || !claim){
-
-setStatus("No approved business claim");
-
-return;
-
-}
-
-
-
-setStatus("Approved");
-
-
-
-if(claim.business_id){
-
-
 const {data,error}=await supabase
 
 .from("businesses")
 
 .select("*")
 
-.eq("id",claim.business_id)
-
-.single();
+.eq("owner_id",user.id);
 
 
 
@@ -99,14 +66,23 @@ if(error){
 
 console.log(error);
 
+setStatus("Error loading businesses");
+
 return;
 
 }
 
 
 
-setBusiness(data);
+if(data && data.length > 0){
 
+setBusinesses(data);
+
+setStatus("Your Businesses");
+
+}else{
+
+setStatus("No business listings yet");
 
 }
 
@@ -125,16 +101,22 @@ Business Dashboard
 </Text>
 
 
-
 <Text>
 Status: {status}
 </Text>
 
 
 
-{business &&
+{businesses.map(business=>(
 
-<>
+
+<View
+
+key={business.id}
+
+style={styles.card}
+
+>
 
 
 <Text style={styles.name}>
@@ -147,14 +129,9 @@ Category: {business.category}
 </Text>
 
 
-<Text style={styles.info}>
-Manage your business listing below
-</Text>
-
-
 
 <Text style={styles.heading}>
-Customer Review QR Code
+Customer QR Code
 </Text>
 
 
@@ -163,22 +140,6 @@ Customer Review QR Code
 businessId={business.id}
 
 />
-
-
-
-<Pressable
-
-style={styles.button}
-
-onPress={()=>router.push("/business/edit")}
-
->
-
-<Text style={styles.buttonText}>
-Edit Business
-</Text>
-
-</Pressable>
 
 
 
@@ -206,6 +167,21 @@ onPress={()=>router.push("/business/reviews")}
 
 >
 
+<Text style={styles.buttonText}>
+Manage Reviews
+</Text>
+
+</Pressable>
+
+
+
+</View>
+
+
+))}
+
+
+
 <Pressable
 
 style={styles.button}
@@ -220,4 +196,56 @@ onPress={()=>router.push("/business/add")}
 
 </Pressable>
 
-<Text style={styles.button
+
+
+</View>
+
+);
+
+}
+
+
+
+const styles=StyleSheet.create({
+
+container:{
+padding:30
+},
+
+title:{
+fontSize:30,
+fontWeight:"bold"
+},
+
+card:{
+borderWidth:1,
+borderRadius:10,
+padding:15,
+marginTop:20
+},
+
+name:{
+fontSize:25,
+fontWeight:"bold"
+},
+
+heading:{
+fontSize:18,
+fontWeight:"bold",
+marginTop:15,
+marginBottom:10
+},
+
+button:{
+backgroundColor:"#222",
+padding:15,
+borderRadius:10,
+marginTop:15
+},
+
+buttonText:{
+color:"white",
+textAlign:"center"
+}
+
+});
