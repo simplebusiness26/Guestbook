@@ -5,8 +5,11 @@ View,
 Text,
 TextInput,
 Pressable,
-StyleSheet
+StyleSheet,
+Image
 } from "react-native";
+
+import * as ImagePicker from "expo-image-picker";
 
 import {supabase} from "../../services/supabase";
 
@@ -19,6 +22,10 @@ export default function EditProfile(){
 const [name,setName]=useState("");
 
 const [bio,setBio]=useState("");
+
+const [photo,setPhoto]=useState("");
+
+const [file,setFile]=useState(null);
 
 
 
@@ -59,6 +66,34 @@ setName(data.full_name || "");
 
 setBio(data.bio || "");
 
+setPhoto(data.profile_photo || "");
+
+}
+
+
+}
+
+
+
+async function pickImage(){
+
+
+const result = await ImagePicker.launchImageLibraryAsync({
+
+mediaTypes:ImagePicker.MediaTypeOptions.Images,
+
+quality:0.7
+
+});
+
+
+
+if(!result.canceled){
+
+setFile(result.assets[0]);
+
+setPhoto(result.assets[0].uri);
+
 }
 
 
@@ -77,6 +112,59 @@ user
 
 
 
+let imageUrl=photo;
+
+
+
+if(file){
+
+
+const response = await fetch(file.uri);
+
+const blob = await response.blob();
+
+
+const filename =
+`${user.id}.jpg`;
+
+
+
+const {error}=await supabase.storage
+
+.from("profile-images")
+
+.upload(filename,blob,{
+contentType:"image/jpeg",
+upsert:true
+});
+
+
+
+if(error){
+
+console.log(error);
+
+return;
+
+}
+
+
+
+const {data}=supabase.storage
+
+.from("profile-images")
+
+.getPublicUrl(filename);
+
+
+
+imageUrl=data.publicUrl;
+
+
+}
+
+
+
 const {error}=await supabase
 
 .from("profiles")
@@ -85,7 +173,9 @@ const {error}=await supabase
 
 full_name:name,
 
-bio:bio
+bio:bio,
+
+profile_photo:imageUrl
 
 })
 
@@ -100,6 +190,7 @@ console.log(error);
 return;
 
 }
+
 
 
 router.back();
@@ -117,6 +208,36 @@ return(
 <Text style={styles.title}>
 Edit Profile
 </Text>
+
+
+
+{photo &&
+
+<Image
+
+source={{uri:photo}}
+
+style={styles.image}
+
+/>
+
+}
+
+
+
+<Pressable
+
+style={styles.button}
+
+onPress={pickImage}
+
+>
+
+<Text style={styles.text}>
+Choose Profile Photo
+</Text>
+
+</Pressable>
 
 
 
@@ -184,6 +305,13 @@ fontWeight:"bold",
 marginBottom:20
 },
 
+image:{
+width:120,
+height:120,
+borderRadius:60,
+marginBottom:20
+},
+
 input:{
 borderWidth:1,
 padding:15,
@@ -194,7 +322,8 @@ marginBottom:15
 button:{
 backgroundColor:"#222",
 padding:15,
-borderRadius:10
+borderRadius:10,
+marginTop:10
 },
 
 text:{
