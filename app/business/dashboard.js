@@ -206,4 +206,18 @@ onPress={()=>router.push("/business/reviews")}
 
 >
 
+<Pressable
+
+style={styles.button}
+
+onPress={()=>router.push("/business/add")}
+
+>
+
+<Text style={styles.buttonText}>
+➕ Add Business Listing
+</Text>
+
+</Pressable>
+
 <Text style={styles.button
