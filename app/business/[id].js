@@ -14,7 +14,10 @@ import {supabase} from "../../services/supabase";
 
 export default function BusinessDetails(){
 
-const {id}=useLocalSearchParams();
+const params = useLocalSearchParams();
+
+const businessId = params.id;
+
 
 const [business,setBusiness]=useState(null);
 const [reviews,setReviews]=useState([]);
@@ -23,11 +26,14 @@ const [reviews,setReviews]=useState([]);
 
 useEffect(()=>{
 
-loadBusiness();
+if(businessId){
 
+loadBusiness();
 loadReviews();
 
-},[]);
+}
+
+},[businessId]);
 
 
 
@@ -39,7 +45,7 @@ const {data,error}=await supabase
 
 .select("*")
 
-.eq("id",id)
+.eq("id",businessId)
 
 .single();
 
@@ -47,7 +53,7 @@ const {data,error}=await supabase
 
 if(error){
 
-console.log(error);
+console.log("Business error:",error);
 
 return;
 
@@ -62,13 +68,16 @@ setBusiness(data);
 
 async function loadReviews(){
 
+console.log("Loading reviews for business:", businessId);
+
+
 const {data,error}=await supabase
 
 .from("reviews")
 
 .select("*")
 
-.eq("business_id",id)
+.eq("business_id",businessId)
 
 .order("created_at",{ascending:false});
 
@@ -76,11 +85,14 @@ const {data,error}=await supabase
 
 if(error){
 
-console.log(error);
+console.log("Review error:",error);
 
 return;
 
 }
+
+
+console.log("Reviews found:",data);
 
 
 setReviews(data || []);
@@ -143,7 +155,7 @@ Reviews ({reviews.length})
 
 
 
-{reviews.map(review=>(
+{reviews.map((review)=>(
 
 <View
 
@@ -174,7 +186,7 @@ style={styles.review}
 
 
 
-{reviews.length===0 &&
+{reviews.length === 0 &&
 
 <Text>
 No reviews yet
@@ -184,12 +196,13 @@ No reviews yet
 
 
 
-
 <Pressable
 
 style={styles.button}
 
-onPress={()=>router.push(`/business/review/${id}`)}
+onPress={()=>
+router.push(`/business/review/${businessId}`)
+}
 
 >
 
