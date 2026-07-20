@@ -5,7 +5,8 @@ View,
 Text,
 TextInput,
 Pressable,
-StyleSheet
+StyleSheet,
+Alert
 } from "react-native";
 
 import {supabase} from "../../services/supabase";
@@ -29,9 +30,25 @@ const [accountType,setAccountType]=useState("");
 async function signup(){
 
 
+if(!name || !email || !password){
+
+Alert.alert(
+"Missing information",
+"Please complete all fields"
+);
+
+return;
+
+}
+
+
+
 if(!accountType){
 
-console.log("Choose account type");
+Alert.alert(
+"Choose account type",
+"Please select Guest, Business Owner or Property Host"
+);
 
 return;
 
@@ -51,7 +68,10 @@ password
 
 if(error){
 
-console.log(error);
+Alert.alert(
+"Signup Error",
+error.message
+);
 
 return;
 
@@ -59,7 +79,20 @@ return;
 
 
 
-await supabase
+if(!data.user){
+
+Alert.alert(
+"Check your email",
+"Your account was created. Confirm your email before logging in."
+);
+
+return;
+
+}
+
+
+
+const {error:profileError}=await supabase
 
 .from("profiles")
 
@@ -74,6 +107,26 @@ email:email,
 account_type:accountType
 
 });
+
+
+
+if(profileError){
+
+Alert.alert(
+"Profile Error",
+profileError.message
+);
+
+return;
+
+}
+
+
+
+Alert.alert(
+"Success",
+"Account created"
+);
 
 
 
@@ -155,9 +208,7 @@ styles.selected
 styles.option
 }
 
-onPress={()=>
-setAccountType("guest")
-}
+onPress={()=>setAccountType("guest")}
 
 >
 
@@ -179,9 +230,7 @@ styles.selected
 styles.option
 }
 
-onPress={()=>
-setAccountType("business")
-}
+onPress={()=>setAccountType("business")}
 
 >
 
@@ -203,9 +252,7 @@ styles.selected
 styles.option
 }
 
-onPress={()=>
-setAccountType("host")
-}
+onPress={()=>setAccountType("host")}
 
 >
 
@@ -274,6 +321,7 @@ marginBottom:10
 },
 
 selected:{
+backgroundColor:"#ddd",
 borderWidth:2,
 padding:15,
 borderRadius:10,
