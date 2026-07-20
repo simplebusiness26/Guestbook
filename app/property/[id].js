@@ -1,3 +1,5 @@
+import QRCodeGenerator from "../../components/QRCodeGenerator";
+
 import React, {useEffect, useState} from "react";
 import {
 View,
