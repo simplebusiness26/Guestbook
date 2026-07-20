@@ -11,6 +11,8 @@ import {supabase} from "../../services/supabase";
 
 import {router} from "expo-router";
 
+import QRCodeGenerator from "../../components/QRCodeGenerator";
+
 
 export default function BusinessDashboard(){
 
@@ -124,7 +126,7 @@ Business Dashboard
 
 
 
-<Text style={styles.status}>
+<Text>
 Status: {status}
 </Text>
 
@@ -148,6 +150,19 @@ Category: {business.category}
 <Text style={styles.info}>
 Manage your business listing below
 </Text>
+
+
+
+<Text style={styles.heading}>
+Customer Review QR Code
+</Text>
+
+
+<QRCodeGenerator
+
+businessId={business.id}
+
+/>
 
 
 
@@ -181,6 +196,8 @@ View Public Profile
 
 </Pressable>
 
+
+
 <Pressable
 
 style={styles.button}
@@ -189,61 +206,4 @@ onPress={()=>router.push("/business/reviews")}
 
 >
 
-<Text style={styles.buttonText}>
-Manage Reviews
-</Text>
-
-</Pressable>
-
-</>
-
-}
-
-
-
-</View>
-
-);
-
-}
-
-
-
-const styles=StyleSheet.create({
-
-container:{
-padding:30
-},
-
-title:{
-fontSize:30,
-fontWeight:"bold"
-},
-
-status:{
-marginTop:20
-},
-
-name:{
-fontSize:25,
-fontWeight:"bold",
-marginTop:25
-},
-
-info:{
-marginTop:15
-},
-
-button:{
-backgroundColor:"#222",
-padding:15,
-borderRadius:10,
-marginTop:20
-},
-
-buttonText:{
-color:"white",
-textAlign:"center"
-}
-
-});
+<Text style={styles.button
