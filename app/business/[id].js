@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React,{useEffect,useState} from "react";
 
 import {
 View,
@@ -7,14 +7,16 @@ StyleSheet,
 ScrollView
 } from "react-native";
 
-import {useLocalSearchParams, router} from "expo-router";
+import {
+useLocalSearchParams
+} from "expo-router";
 
 import {supabase} from "../../services/supabase";
 
 import ClaimButton from "../../components/ClaimButton";
 
 
-export default function BusinessDetails(){
+export default function BusinessPage(){
 
 
 const {id}=useLocalSearchParams();
@@ -29,6 +31,7 @@ const [reviews,setReviews]=useState([]);
 useEffect(()=>{
 
 loadBusiness();
+
 loadReviews();
 
 },[]);
@@ -61,6 +64,7 @@ return;
 
 setBusiness(data);
 
+
 }
 
 
@@ -76,7 +80,12 @@ const {data,error}=await supabase
 
 .eq("business_id",id)
 
-.order("created_at",{ascending:false});
+.order(
+"created_at",
+{
+ascending:false
+}
+);
 
 
 
@@ -90,6 +99,7 @@ return;
 
 
 setReviews(data || []);
+
 
 }
 
@@ -108,7 +118,7 @@ return(
 <ScrollView style={styles.container}>
 
 
-<Text style={styles.name}>
+<Text style={styles.title}>
 {business.name}
 </Text>
 
@@ -129,12 +139,16 @@ return(
 
 
 
-<ClaimButton businessId={id}/>
+<ClaimButton
+
+businessId={id}
+
+/>
 
 
 
 <Text style={styles.heading}>
-Reviews ({reviews.length})
+Reviews
 </Text>
 
 
@@ -142,20 +156,26 @@ Reviews ({reviews.length})
 {reviews.map(review=>(
 
 <View
+
 key={review.id}
+
 style={styles.review}
+
 >
 
+
 <Text>
-{"⭐".repeat(review.rating)}
+⭐ {review.rating}
 </Text>
+
 
 <Text>
 {review.comment}
 </Text>
 
+
 <Text>
-- {review.name || "Guest"}
+- {review.name}
 </Text>
 
 
@@ -179,25 +199,25 @@ container:{
 padding:20
 },
 
-name:{
+title:{
 fontSize:30,
 fontWeight:"bold"
 },
 
 description:{
-marginTop:15
+marginVertical:20
 },
 
 heading:{
-fontSize:24,
+fontSize:25,
 fontWeight:"bold",
 marginTop:30
 },
 
 review:{
 borderWidth:1,
-padding:15,
 borderRadius:10,
+padding:15,
 marginTop:10
 }
 
