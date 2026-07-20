@@ -1,4 +1,4 @@
-import React from "react";
+import React,{useEffect,useState} from "react";
 
 import {
 View,
@@ -9,8 +9,93 @@ StyleSheet
 
 import {router} from "expo-router";
 
+import {supabase} from "../services/supabase";
+
 
 export default function Home(){
+
+
+const [userType,setUserType]=useState(null);
+
+const [loading,setLoading]=useState(true);
+
+
+
+useEffect(()=>{
+
+loadUserType();
+
+},[]);
+
+
+
+async function loadUserType(){
+
+
+const {
+data:{
+user
+}
+}=await supabase.auth.getUser();
+
+
+
+if(!user){
+
+setLoading(false);
+
+return;
+
+}
+
+
+
+const {data,error}=await supabase
+
+.from("profiles")
+
+.select("account_type,is_admin")
+
+.eq("id",user.id)
+
+.single();
+
+
+
+if(error){
+
+console.log(error);
+
+setLoading(false);
+
+return;
+
+}
+
+
+
+if(data){
+
+if(data.is_admin){
+
+setUserType("admin");
+
+}else{
+
+setUserType(data.account_type);
+
+}
+
+}
+
+
+
+setLoading(false);
+
+
+}
+
+
 
 return(
 
@@ -44,6 +129,8 @@ onPress={()=>router.push("/map")}
 
 
 
+{!userType &&
+
 <Pressable
 
 style={styles.button}
@@ -58,6 +145,8 @@ Create Account
 
 </Pressable>
 
+}
+
 
 
 <Pressable
@@ -68,14 +157,15 @@ onPress={()=>router.push("/profile")}
 
 >
 
-<Text style={styles.text}
->
+<Text style={styles.text}>
 My Profile
 </Text>
 
 </Pressable>
 
 
+
+{userType==="business" &&
 
 <Pressable
 
@@ -86,10 +176,36 @@ onPress={()=>router.push("/business/dashboard")}
 >
 
 <Text style={styles.text}>
-Business Dashboard
+🏪 Business Dashboard
 </Text>
 
 </Pressable>
+
+}
+
+
+
+{userType==="host" &&
+
+<Pressable
+
+style={styles.button}
+
+onPress={()=>router.push("/property/dashboard")}
+
+>
+
+<Text style={styles.text}>
+🏠 Property Dashboard
+</Text>
+
+</Pressable>
+
+}
+
+
+
+{userType==="admin" &&
 
 <Pressable
 
@@ -100,10 +216,13 @@ onPress={()=>router.push("/admin/claims")}
 >
 
 <Text style={styles.text}>
-Admin Claims
+⚙️ Admin Claims
 </Text>
 
 </Pressable>
+
+}
+
 
 
 </View>
