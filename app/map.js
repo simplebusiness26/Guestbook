@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet } from "react-native";
+import {
+  StyleSheet,
+  View,
+  TextInput,
+  Pressable,
+  Text
+} from "react-native";
+
 import MapView, { Marker } from "react-native-maps";
 import { router } from "expo-router";
 import { supabase } from "../services/supabase";
@@ -7,8 +14,12 @@ import { supabase } from "../services/supabase";
 
 export default function MapScreen(){
 
-const [businesses,setBusinesses]=useState([]);
-const [properties,setProperties]=useState([]);
+const [businesses,setBusinesses] = useState([]);
+const [properties,setProperties] = useState([]);
+
+const [search,setSearch] = useState("");
+const [category,setCategory] = useState("");
+
 
 
 useEffect(()=>{
@@ -32,18 +43,17 @@ const {data:propertyData,error:propertyError}=await supabase
 .select("*");
 
 
+
 if(businessError){
-console.log("Business error:",businessError);
+console.log(businessError);
 }
 
-
 if(propertyError){
-console.log("Property error:",propertyError);
+console.log(propertyError);
 }
 
 
 setBusinesses(businessData || []);
-
 setProperties(propertyData || []);
 
 
@@ -51,105 +61,129 @@ setProperties(propertyData || []);
 
 
 
+const filteredBusinesses = businesses.filter(place=>{
+
+
+const searchMatch =
+place.name
+?.toLowerCase()
+.includes(search.toLowerCase());
+
+
+const categoryMatch =
+category === "" ||
+place.category === category;
+
+
+return searchMatch && categoryMatch;
+
+
+});
+
+
+
 return(
+
+<View style={styles.container}>
+
+
+<View style={styles.top}>
+
+
+<TextInput
+
+style={styles.search}
+
+placeholder="Search places..."
+
+value={search}
+
+onChangeText={setSearch}
+
+/>
+
+
+
+<View style={styles.buttons}>
+
+
+{["Pub","Cafe","Restaurant"].map(item=>(
+
+<Pressable
+
+key={item}
+
+style={styles.button}
+
+onPress={()=>{
+
+if(category===item){
+
+setCategory("");
+
+}else{
+
+setCategory(item);
+
+}
+
+}}
+
+>
+
+<Text>
+{item}
+</Text>
+
+</Pressable>
+
+))}
+
+
+</View>
+
+
+</View>
+
+
 
 <MapView
 
 style={styles.map}
 
 initialRegion={{
+
 latitude:50.8225,
+
 longitude:-0.1372,
+
 latitudeDelta:0.05,
+
 longitudeDelta:0.05
+
 }}
 
 >
 
 
-{businesses.map(place=>{
 
-if(!place.latitude || !place.longitude){
-return null;
-}
+{filteredBusinesses.map(place=>(
 
-
-return(
 
 <Marker
 
 key={`business-${place.id}`}
 
 coordinate={{
+
 latitude:place.latitude,
+
 longitude:place.longitude
+
 }}
 
 title={place.name}
 
-description={place.category || "Local place"}
+description={place.category}
 
-onCalloutPress={()=>
-router.push(`/business/${place.id}`)
-}
-
-/>
-
-)
-
-})}
-
-
-
-
-{properties.map(property=>{
-
-if(!property.latitude || !property.longitude){
-return null;
-}
-
-
-return(
-
-<Marker
-
-key={`property-${property.id}`}
-
-coordinate={{
-latitude:property.latitude,
-longitude:property.longitude
-}}
-
-title={property.name}
-
-description="Airbnb Stay"
-
-pinColor="blue"
-
-onCalloutPress={()=>
-router.push(`/property/${property.id}`)
-}
-
-/>
-
-)
-
-})}
-
-
-
-</MapView>
-
-);
-
-}
-
-
-
-const styles=StyleSheet.create({
-
-map:{
-flex:1
-}
-
-});
+on
