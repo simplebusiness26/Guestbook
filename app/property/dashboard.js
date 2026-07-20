@@ -185,7 +185,19 @@ Manage Reviews
 
 </Pressable>
 
+<Pressable
 
+style={styles.button}
+
+onPress={()=>router.push("/property/add")}
+
+>
+
+<Text style={styles.buttonText}>
+➕ Add Property Listing
+</Text>
+
+</Pressable>
 
 </>
 
