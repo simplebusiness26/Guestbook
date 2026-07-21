@@ -1,55 +1,51 @@
 import React from "react";
-import { Tabs } from "expo-router";
 
-export default function Layout() {
+import { Stack } from "expo-router";
 
-  return (
 
-    <Tabs
-      screenOptions={{
-        headerShown:false,
-        tabBarActiveTintColor:"#000000"
-      }}
+export default function Layout(){
 
-    >
+return(
 
-      <Tabs.Screen
-        name="index"
-        options={{
-          title:"Home"
-        }}
-      />
+<Stack
 
-      <Tabs.Screen
-        name="map"
-        options={{
-          title:"Map"
-        }}
-      />
+screenOptions={{
 
-      <Tabs.Screen
-        name="scan"
-        options={{
-          title:"Scan"
-        }}
-      />
+headerShown:false
 
-      <Tabs.Screen
-        name="saved"
-        options={{
-          title:"Saved"
-        }}
-      />
+}}
 
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title:"Profile"
-        }}
-      />
+>
 
-    </Tabs>
+<Stack.Screen name="index" />
 
-  );
+<Stack.Screen name="map" />
+
+<Stack.Screen name="scan" />
+
+<Stack.Screen name="saved" />
+
+<Stack.Screen name="profile" />
+
+
+<Stack.Screen name="auth/signup" />
+
+<Stack.Screen name="auth/login" />
+
+
+<Stack.Screen name="business/dashboard" />
+
+<Stack.Screen name="business/reviews" />
+
+<Stack.Screen name="property/dashboard" />
+
+<Stack.Screen name="property/reviews" />
+
+
+<Stack.Screen name="admin/claims" />
+
+</Stack>
+
+);
 
 }
