@@ -4,7 +4,8 @@ import {
 View,
 Text,
 Pressable,
-StyleSheet
+StyleSheet,
+ActivityIndicator
 } from "react-native";
 
 import {router} from "expo-router";
@@ -17,13 +18,38 @@ export default function Home(){
 
 const [userType,setUserType]=useState(null);
 
+const [loggedIn,setLoggedIn]=useState(false);
+
 const [loading,setLoading]=useState(true);
 
 
 
 useEffect(()=>{
 
+
 loadUserType();
+
+
+
+const {
+data:{
+subscription
+}
+
+}=supabase.auth.onAuthStateChange(()=>{
+
+loadUserType();
+
+});
+
+
+
+return()=>{
+
+subscription.unsubscribe();
+
+};
+
 
 },[]);
 
@@ -32,15 +58,24 @@ loadUserType();
 async function loadUserType(){
 
 
+setLoading(true);
+
+
+
 const {
 data:{
 user
 }
+
 }=await supabase.auth.getUser();
 
 
 
 if(!user){
+
+setLoggedIn(false);
+
+setUserType(null);
 
 setLoading(false);
 
@@ -50,7 +85,14 @@ return;
 
 
 
-const {data,error}=await supabase
+setLoggedIn(true);
+
+
+
+const {
+data,
+error
+}=await supabase
 
 .from("profiles")
 
@@ -76,15 +118,19 @@ return;
 
 if(data){
 
+
 if(data.is_admin){
 
 setUserType("admin");
 
-}else{
+}
+
+else{
 
 setUserType(data.account_type);
 
 }
+
 
 }
 
@@ -92,6 +138,37 @@ setUserType(data.account_type);
 
 setLoading(false);
 
+
+}
+
+
+
+async function logout(){
+
+
+await supabase.auth.signOut();
+
+
+setUserType(null);
+
+setLoggedIn(false);
+
+
+}
+
+
+
+if(loading){
+
+return(
+
+<View style={styles.container}>
+
+<ActivityIndicator size="large"/>
+
+</View>
+
+);
 
 }
 
@@ -129,28 +206,51 @@ onPress={()=>router.push("/map")}
 
 
 
-{!userType && (
+{!loggedIn &&
+
 <>
-  <Pressable
-    style={styles.button}
-    onPress={() => router.push("/auth/login")}
-  >
-    <Text style={styles.text}>
-      Login
-    </Text>
-  </Pressable>
 
-  <Pressable
-    style={styles.button}
-    onPress={() => router.push("/auth/signup")}
-  >
-    <Text style={styles.text}>
-      Create Account
-    </Text>
-  </Pressable>
+
+<Pressable
+
+style={styles.button}
+
+onPress={()=>router.push("/auth/login")}
+
+>
+
+<Text style={styles.text}>
+Login
+</Text>
+
+</Pressable>
+
+
+
+<Pressable
+
+style={styles.button}
+
+onPress={()=>router.push("/auth/signup")}
+
+>
+
+<Text style={styles.text}>
+Create Account
+</Text>
+
+</Pressable>
+
+
 </>
-)}
 
+}
+
+
+
+{loggedIn &&
+
+<>
 
 
 <Pressable
@@ -229,6 +329,27 @@ onPress={()=>router.push("/admin/claims")}
 
 
 
+<Pressable
+
+style={styles.logout}
+
+onPress={logout}
+
+>
+
+<Text style={styles.logoutText}>
+Logout
+</Text>
+
+</Pressable>
+
+
+</>
+
+}
+
+
+
 </View>
 
 );
@@ -267,6 +388,16 @@ marginTop:15
 text:{
 color:"white",
 textAlign:"center",
+fontWeight:"bold"
+},
+
+logout:{
+marginTop:20,
+padding:12
+},
+
+logoutText:{
+color:"red",
 fontWeight:"bold"
 }
 
