@@ -23,13 +23,42 @@ const [loading,setLoading]=useState(true);
 
 useEffect(()=>{
 
+
 loadProfile();
+
+
+
+const {
+data:{
+subscription
+}
+
+}=supabase.auth.onAuthStateChange(()=>{
+
+loadProfile();
+
+});
+
+
+
+return()=>{
+
+subscription.unsubscribe();
+
+};
+
 
 },[]);
 
 
 
+
+
 async function loadProfile(){
+
+
+setLoading(true);
+
 
 
 const {
@@ -42,6 +71,8 @@ user
 
 
 if(!user){
+
+setProfile(null);
 
 setLoading(false);
 
@@ -69,7 +100,9 @@ error
 
 if(error){
 
-console.log(error);
+console.log("Profile error:",error.message);
+
+setProfile(null);
 
 setLoading(false);
 
@@ -88,16 +121,35 @@ setLoading(false);
 
 
 
+
+
 async function logout(){
 
 
-await supabase.auth.signOut();
+const {error}=await supabase.auth.signOut();
+
+
+
+if(error){
+
+console.log("Logout error:",error.message);
+
+return;
+
+}
+
+
+
+setProfile(null);
+
 
 
 router.replace("/");
 
 
 }
+
+
 
 
 
@@ -119,15 +171,19 @@ Loading profile...
 
 
 
+
+
 if(!profile){
 
 return(
 
 <View style={styles.container}>
 
+
 <Text style={styles.title}>
 No profile found
 </Text>
+
 
 
 <Pressable
@@ -153,6 +209,8 @@ Login
 
 
 
+
+
 return(
 
 <View style={styles.container}>
@@ -164,6 +222,7 @@ My Profile
 
 
 
+
 <View style={styles.card}>
 
 
@@ -171,9 +230,11 @@ My Profile
 Name
 </Text>
 
+
 <Text style={styles.value}>
 {profile.full_name || "No name"}
 </Text>
+
 
 
 
@@ -181,9 +242,12 @@ Name
 Email
 </Text>
 
+
 <Text style={styles.value}>
 {profile.email}
 </Text>
+
+
 
 
 
@@ -191,25 +255,42 @@ Email
 Account Type
 </Text>
 
+
+
 <Text style={styles.value}>
+
 {
 profile.account_type === "business"
+
 ?
+
 "🏪 Business Owner"
+
 :
+
 profile.account_type === "host"
+
 ?
+
 "🏠 Property Host"
+
 :
+
 "👤 Guest"
+
 }
+
 </Text>
+
+
 
 
 
 <Text style={styles.label}>
 Bio
 </Text>
+
+
 
 <Text style={styles.value}>
 {profile.bio || "No bio added yet"}
@@ -221,11 +302,14 @@ Bio
 
 
 
+
+
 <Pressable
 
 style={styles.button}
 
 onPress={()=>{
+
 
 if(profile.account_type==="business"){
 
@@ -245,15 +329,20 @@ router.push("/map");
 
 }
 
+
 }}
 
 >
+
 
 <Text style={styles.buttonText}>
 Open Dashboard
 </Text>
 
+
 </Pressable>
+
+
 
 
 
@@ -265,11 +354,15 @@ onPress={logout}
 
 >
 
+
 <Text style={styles.logoutText}>
 Logout
 </Text>
 
+
 </Pressable>
+
+
 
 
 
@@ -278,6 +371,8 @@ Logout
 );
 
 }
+
+
 
 
 
