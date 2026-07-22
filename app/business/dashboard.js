@@ -1,17 +1,21 @@
-import React,{useEffect,useState} from "react";
+import React,{useState,useCallback} from "react";
 
 import {
 View,
 Text,
 StyleSheet,
-Pressable
+Pressable,
+ScrollView
 } from "react-native";
 
 import {supabase} from "../../services/supabase";
 
 import {router} from "expo-router";
 
+import {useFocusEffect} from "@react-navigation/native";
+
 import QRCodeGenerator from "../../components/QRCodeGenerator";
+
 
 
 export default function BusinessDashboard(){
@@ -23,15 +27,22 @@ const [status,setStatus]=useState("Loading...");
 
 
 
-useEffect(()=>{
+useFocusEffect(
+
+useCallback(()=>{
 
 loadDashboard();
 
-},[]);
+},[])
+
+);
 
 
 
 async function loadDashboard(){
+
+
+setStatus("Loading...");
 
 
 const {
@@ -53,50 +64,6 @@ return;
 
 
 
-// Find businesses connected through approved claims
-
-const {
-data:claims,
-error:claimError
-
-}=await supabase
-
-.from("claims")
-
-.select("business_id")
-
-.eq("user_id",user.id)
-
-.eq("status","approved");
-
-
-
-if(claimError){
-
-console.log(claimError);
-
-setStatus("Error loading claims");
-
-return;
-
-}
-
-
-
-if(!claims || claims.length===0){
-
-setStatus("No business listings yet");
-
-return;
-
-}
-
-
-
-const ids=claims.map(item=>item.business_id);
-
-
-
 const {
 data,
 error
@@ -107,7 +74,7 @@ error
 
 .select("*")
 
-.in("id",ids);
+.eq("owner_id",user.id);
 
 
 
@@ -131,16 +98,29 @@ if(data.length){
 
 setStatus("Your Businesses");
 
+}else{
+
+setStatus("No business listings yet");
+
 }
 
 
 }
+
 
 
 
 return(
 
-<View style={styles.container}>
+<ScrollView
+
+style={styles.container}
+
+contentContainerStyle={{
+paddingBottom:40
+}}
+
+>
 
 
 <Text style={styles.title}>
@@ -148,14 +128,14 @@ Business Dashboard
 </Text>
 
 
-
 <Text>
-Status: {status}
+{status}
 </Text>
 
 
 
-{businesses.map(business=>(
+{
+businesses.map((business)=>(
 
 
 <View
@@ -173,9 +153,8 @@ style={styles.card}
 
 
 <Text>
-Category: {business.category}
+{business.category}
 </Text>
-
 
 
 <Text style={styles.heading}>
@@ -227,7 +206,9 @@ Edit Business
 </View>
 
 
-))}
+))
+
+}
 
 
 
@@ -239,15 +220,17 @@ onPress={()=>router.push("/business/add")}
 
 >
 
+
 <Text style={styles.buttonText}>
 ➕ Add Business Listing
 </Text>
+
 
 </Pressable>
 
 
 
-</View>
+</ScrollView>
 
 );
 
@@ -261,10 +244,12 @@ container:{
 padding:30
 },
 
+
 title:{
 fontSize:30,
 fontWeight:"bold"
 },
+
 
 card:{
 borderWidth:1,
@@ -273,17 +258,19 @@ padding:15,
 marginTop:20
 },
 
+
 name:{
 fontSize:25,
 fontWeight:"bold"
 },
 
+
 heading:{
 fontSize:18,
 fontWeight:"bold",
-marginTop:15,
-marginBottom:10
+marginTop:15
 },
+
 
 button:{
 backgroundColor:"#222",
@@ -292,12 +279,14 @@ borderRadius:10,
 marginTop:15
 },
 
+
 addButton:{
 backgroundColor:"#0066ff",
 padding:15,
 borderRadius:10,
 marginTop:25
 },
+
 
 buttonText:{
 color:"white",
