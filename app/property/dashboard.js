@@ -38,6 +38,7 @@ const {
 data:{
 user
 }
+
 }=await supabase.auth.getUser();
 
 
@@ -52,13 +53,61 @@ return;
 
 
 
-const {data,error}=await supabase
+// Get approved property claims
+
+const {
+data:claims,
+error:claimError
+
+}=await supabase
+
+.from("claims")
+
+.select("property_id")
+
+.eq("user_id",user.id)
+
+.eq("status","approved");
+
+
+
+if(claimError){
+
+console.log(claimError);
+
+setStatus("Error loading claims");
+
+return;
+
+}
+
+
+
+if(!claims || claims.length===0){
+
+setStatus("No property listings yet");
+
+return;
+
+}
+
+
+
+const ids=claims.map(item=>item.property_id);
+
+
+
+const {
+data,
+error
+
+}=await supabase
 
 .from("properties")
 
 .select("*")
 
-.eq("owner_id",user.id);
+.in("id",ids);
 
 
 
@@ -74,15 +123,13 @@ return;
 
 
 
-if(data && data.length > 0){
+setProperties(data || []);
 
-setProperties(data);
+
+
+if(data.length){
 
 setStatus("Your Properties");
-
-}else{
-
-setStatus("No property listings yet");
 
 }
 
@@ -165,12 +212,28 @@ View Public Profile
 
 style={styles.button}
 
-onPress={()=>router.push("/property/reviews")}
+onPress={()=>router.push(`/property/reviews/${property.id}`)}
 
 >
 
 <Text style={styles.buttonText}>
 Manage Reviews
+</Text>
+
+</Pressable>
+
+
+
+<Pressable
+
+style={styles.button}
+
+onPress={()=>router.push(`/property/edit/${property.id}`)}
+
+>
+
+<Text style={styles.buttonText}>
+Edit Property
 </Text>
 
 </Pressable>
@@ -186,7 +249,7 @@ Manage Reviews
 
 <Pressable
 
-style={styles.button}
+style={styles.addButton}
 
 onPress={()=>router.push("/property/add")}
 
@@ -243,12 +306,20 @@ button:{
 backgroundColor:"#222",
 padding:15,
 borderRadius:10,
-marginTop:20
+marginTop:15
+},
+
+addButton:{
+backgroundColor:"#0066ff",
+padding:15,
+borderRadius:10,
+marginTop:25
 },
 
 buttonText:{
 color:"white",
-textAlign:"center"
+textAlign:"center",
+fontWeight:"bold"
 }
 
 });
