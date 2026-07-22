@@ -16,8 +16,6 @@ import {supabase} from "../services/supabase";
 export default function Home(){
 
 
-const [userType,setUserType]=useState(null);
-
 const [loggedIn,setLoggedIn]=useState(false);
 
 const [loading,setLoading]=useState(true);
@@ -27,7 +25,7 @@ const [loading,setLoading]=useState(true);
 useEffect(()=>{
 
 
-loadUserType();
+checkUser();
 
 
 
@@ -38,7 +36,7 @@ subscription
 
 }=supabase.auth.onAuthStateChange(()=>{
 
-loadUserType();
+checkUser();
 
 });
 
@@ -55,11 +53,7 @@ subscription.unsubscribe();
 
 
 
-async function loadUserType(){
-
-
-setLoading(true);
-
+async function checkUser(){
 
 
 const {
@@ -71,87 +65,10 @@ user
 
 
 
-if(!user){
-
-setLoggedIn(false);
-
-setUserType(null);
-
-setLoading(false);
-
-return;
-
-}
-
-
-
-setLoggedIn(true);
-
-
-
-const {
-data,
-error
-}=await supabase
-
-.from("profiles")
-
-.select("account_type,is_admin")
-
-.eq("id",user.id)
-
-.single();
-
-
-
-if(error){
-
-console.log(error);
-
-setLoading(false);
-
-return;
-
-}
-
-
-
-if(data){
-
-
-if(data.is_admin){
-
-setUserType("admin");
-
-}
-
-else{
-
-setUserType(data.account_type);
-
-}
-
-
-}
-
+setLoggedIn(!!user);
 
 
 setLoading(false);
-
-
-}
-
-
-
-async function logout(){
-
-
-await supabase.auth.signOut();
-
-
-setUserType(null);
-
-setLoggedIn(false);
 
 
 }
@@ -185,31 +102,31 @@ Guestbook
 
 
 <Text style={styles.subtitle}>
-Discover local businesses and stays
+Discover places, stays and local experiences
 </Text>
 
 
 
 <Pressable
 
-style={styles.button}
+style={styles.primaryButton}
 
 onPress={()=>router.push("/map")}
 
 >
 
-<Text style={styles.text}>
-🗺 Open Map
+<Text style={styles.buttonText}>
+🗺 Explore Map
 </Text>
 
 </Pressable>
 
 
 
-{!loggedIn &&
+{
+!loggedIn &&
 
 <>
-
 
 <Pressable
 
@@ -219,7 +136,7 @@ onPress={()=>router.push("/auth/login")}
 
 >
 
-<Text style={styles.text}>
+<Text style={styles.buttonText}>
 Login
 </Text>
 
@@ -235,116 +152,34 @@ onPress={()=>router.push("/auth/signup")}
 
 >
 
-<Text style={styles.text}>
+<Text style={styles.buttonText}>
 Create Account
 </Text>
 
 </Pressable>
 
-
 </>
 
 }
 
 
 
-{loggedIn &&
-
-<>
-
+{
+loggedIn &&
 
 <Pressable
 
 style={styles.button}
 
-onPress={()=>router.push("/profile")}
+onPress={()=>router.push("/menu")}
 
 >
 
-<Text style={styles.text}>
-My Profile
+<Text style={styles.buttonText}>
+☰ Open Menu
 </Text>
 
 </Pressable>
-
-
-
-{userType==="business" &&
-
-<Pressable
-
-style={styles.button}
-
-onPress={()=>router.push("/business/dashboard")}
-
->
-
-<Text style={styles.text}>
-🏪 Business Dashboard
-</Text>
-
-</Pressable>
-
-}
-
-
-
-{userType==="host" &&
-
-<Pressable
-
-style={styles.button}
-
-onPress={()=>router.push("/property/dashboard")}
-
->
-
-<Text style={styles.text}>
-🏠 Property Dashboard
-</Text>
-
-</Pressable>
-
-}
-
-
-
-{userType==="admin" &&
-
-<Pressable
-
-style={styles.button}
-
-onPress={()=>router.push("/admin/claims")}
-
->
-
-<Text style={styles.text}>
-⚙️ Admin Claims
-</Text>
-
-</Pressable>
-
-}
-
-
-
-<Pressable
-
-style={styles.logout}
-
-onPress={logout}
-
->
-
-<Text style={styles.logoutText}>
-Logout
-</Text>
-
-</Pressable>
-
-
-</>
 
 }
 
@@ -364,41 +199,46 @@ container:{
 flex:1,
 justifyContent:"center",
 alignItems:"center",
-padding:20
+padding:25
 },
 
+
 title:{
-fontSize:40,
+fontSize:42,
 fontWeight:"bold",
 marginBottom:10
 },
 
+
 subtitle:{
-marginBottom:40
+fontSize:16,
+marginBottom:40,
+textAlign:"center"
 },
+
 
 button:{
 backgroundColor:"#222",
 width:"90%",
 padding:16,
-borderRadius:10,
+borderRadius:12,
 marginTop:15
 },
 
-text:{
+
+primaryButton:{
+backgroundColor:"#0066ff",
+width:"90%",
+padding:16,
+borderRadius:12
+},
+
+
+buttonText:{
 color:"white",
 textAlign:"center",
-fontWeight:"bold"
-},
-
-logout:{
-marginTop:20,
-padding:12
-},
-
-logoutText:{
-color:"red",
-fontWeight:"bold"
+fontWeight:"bold",
+fontSize:16
 }
 
 });
