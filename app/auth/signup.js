@@ -6,24 +6,47 @@ Text,
 TextInput,
 Pressable,
 StyleSheet,
-Alert
+ScrollView,
+Alert,
+ActivityIndicator
 } from "react-native";
+
+import {router} from "expo-router";
 
 import {supabase} from "../../services/supabase";
 
-import {router} from "expo-router";
+
+const ACCOUNT_TYPES=[
+{
+value:"guest",
+label:"Guest",
+desc:"Explore & review local places"
+},
+{
+value:"business",
+label:"Business Owner",
+desc:"List and manage your business"
+},
+{
+value:"host",
+label:"Property Host",
+desc:"List your Airbnb / rental"
+}
+];
 
 
 export default function Signup(){
 
 
+const [name,setName]=useState("");
+
 const [email,setEmail]=useState("");
 
 const [password,setPassword]=useState("");
 
-const [name,setName]=useState("");
-
 const [accountType,setAccountType]=useState("");
+
+const [loading,setLoading]=useState(false);
 
 
 
@@ -47,7 +70,7 @@ if(!accountType){
 
 Alert.alert(
 "Choose account type",
-"Please select Guest, Business Owner or Property Host"
+"Please select an account type"
 );
 
 return;
@@ -56,9 +79,22 @@ return;
 
 
 
-const {data,error}=await supabase.auth.signUp({
+try{
 
-email,
+
+setLoading(true);
+
+
+console.log("Starting signup");
+
+
+
+const {
+data,
+error
+}=await supabase.auth.signUp({
+
+email:email.trim(),
 
 password
 
@@ -66,14 +102,13 @@ password
 
 
 
+console.log("Auth result",data,error);
+
+
+
 if(error){
 
-Alert.alert(
-"Signup Error",
-error.message
-);
-
-return;
+throw error;
 
 }
 
@@ -81,9 +116,11 @@ return;
 
 if(!data.user){
 
+setLoading(false);
+
 Alert.alert(
-"Check your email",
-"Your account was created. Confirm your email before logging in."
+"Email verification required",
+"Please check your email and verify your account before logging in."
 );
 
 return;
@@ -92,17 +129,19 @@ return;
 
 
 
-const {error:profileError}=await supabase
+const {
+error:profileError
+}=await supabase
 
 .from("profiles")
 
-.insert({
+.upsert({
 
 id:data.user.id,
 
 full_name:name,
 
-email:email,
+email:email.trim(),
 
 account_type:accountType
 
@@ -110,27 +149,65 @@ account_type:accountType
 
 
 
+console.log("Profile error",profileError);
+
+
+
 if(profileError){
 
-Alert.alert(
-"Profile Error",
-profileError.message
-);
-
-return;
+throw profileError;
 
 }
 
 
 
+setLoading(false);
+
+
+
 Alert.alert(
-"Success",
-"Account created"
+"Account created",
+"Welcome to Guestbook"
 );
 
 
 
+if(accountType==="business"){
+
+router.replace("/business/dashboard");
+
+}
+else if(accountType==="host"){
+
+router.replace("/property/dashboard");
+
+}
+else{
+
 router.replace("/");
+
+}
+
+
+
+}
+
+catch(error){
+
+
+console.log("Signup failed",error);
+
+
+setLoading(false);
+
+
+Alert.alert(
+"Signup failed",
+error.message || "Something went wrong"
+);
+
+
+}
 
 
 }
@@ -139,7 +216,11 @@ router.replace("/");
 
 return(
 
-<View style={styles.container}>
+<ScrollView
+
+contentContainerStyle={styles.container}
+
+>
 
 
 <Text style={styles.title}>
@@ -167,6 +248,10 @@ onChangeText={setName}
 style={styles.input}
 
 placeholder="Email"
+
+autoCapitalize="none"
+
+keyboardType="email-address"
 
 value={email}
 
@@ -198,69 +283,42 @@ I am a:
 
 
 
-<Pressable
-
-style={
-accountType==="guest"
-?
-styles.selected
-:
-styles.option
-}
-
-onPress={()=>setAccountType("guest")}
-
->
-
-<Text>
-👤 Guest
-</Text>
-
-</Pressable>
-
+{
+ACCOUNT_TYPES.map(type=>(
 
 
 <Pressable
 
-style={
-accountType==="business"
-?
-styles.selected
-:
-styles.option
-}
+key={type.value}
 
-onPress={()=>setAccountType("business")}
+style={[
+
+styles.option,
+
+accountType===type.value && styles.selected
+
+]}
+
+onPress={()=>setAccountType(type.value)}
 
 >
 
-<Text>
-🏪 Business Owner
+
+<Text style={styles.optionTitle}>
+{type.label}
 </Text>
+
+
+<Text>
+{type.desc}
+</Text>
+
 
 </Pressable>
 
 
-
-<Pressable
-
-style={
-accountType==="host"
-?
-styles.selected
-:
-styles.option
+))
 }
-
-onPress={()=>setAccountType("host")}
-
->
-
-<Text>
-🏠 Property Host
-</Text>
-
-</Pressable>
 
 
 
@@ -270,17 +328,31 @@ style={styles.button}
 
 onPress={signup}
 
+disabled={loading}
+
 >
 
+
+{
+loading
+
+?
+
+<ActivityIndicator color="white"/>
+
+:
+
 <Text style={styles.buttonText}>
-Sign Up
+Create Account
 </Text>
+
+}
+
 
 </Pressable>
 
 
-
-</View>
+</ScrollView>
 
 );
 
@@ -309,35 +381,37 @@ marginBottom:15
 
 label:{
 fontSize:18,
-marginTop:10,
 marginBottom:10
 },
 
 option:{
 borderWidth:1,
-padding:15,
 borderRadius:10,
+padding:15,
 marginBottom:10
 },
 
 selected:{
-backgroundColor:"#ddd",
 borderWidth:2,
-padding:15,
-borderRadius:10,
-marginBottom:10
+backgroundColor:"#ddd"
+},
+
+optionTitle:{
+fontWeight:"bold",
+fontSize:16
 },
 
 button:{
 backgroundColor:"#222",
-padding:15,
+padding:16,
 borderRadius:10,
-marginTop:20
+marginTop:20,
+alignItems:"center"
 },
 
 buttonText:{
 color:"white",
-textAlign:"center"
+fontWeight:"bold"
 }
 
 });
