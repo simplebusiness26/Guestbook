@@ -5,7 +5,9 @@ View,
 Text,
 TextInput,
 Pressable,
-StyleSheet
+StyleSheet,
+Alert,
+ActivityIndicator
 } from "react-native";
 
 import {supabase} from "../../services/supabase";
@@ -22,14 +24,40 @@ const [password,setPassword]=useState("");
 
 const [error,setError]=useState("");
 
+const [loading,setLoading]=useState(false);
+
 
 
 async function login(){
 
 
-const {data,error}=await supabase.auth.signInWithPassword({
+setError("");
 
-email,
+
+
+if(!email || !password){
+
+setError("Please enter your email and password");
+
+return;
+
+}
+
+
+
+try{
+
+
+setLoading(true);
+
+
+
+const {
+data,
+error
+}=await supabase.auth.signInWithPassword({
+
+email:email.trim(),
 
 password
 
@@ -39,15 +67,57 @@ password
 
 if(error){
 
-setError(error.message);
-
-return;
+throw error;
 
 }
 
 
 
 router.replace("/");
+
+
+
+}
+
+catch(error){
+
+
+console.log(error);
+
+
+
+let message="Login failed";
+
+
+
+if(error.message.includes("Invalid login")){
+
+message="Incorrect email or password";
+
+}
+
+else{
+
+message=error.message;
+
+}
+
+
+
+setError(message);
+
+
+
+}
+
+finally{
+
+
+setLoading(false);
+
+
+}
+
 
 
 }
@@ -70,6 +140,10 @@ Login
 style={styles.input}
 
 placeholder="Email"
+
+autoCapitalize="none"
+
+keyboardType="email-address"
 
 value={email}
 
@@ -111,10 +185,41 @@ style={styles.button}
 
 onPress={login}
 
+disabled={loading}
+
 >
+
+{
+
+loading
+
+?
+
+<ActivityIndicator color="white"/>
+
+:
 
 <Text style={styles.buttonText}>
 Login
+</Text>
+
+}
+
+
+</Pressable>
+
+
+
+<Pressable
+
+style={styles.signup}
+
+onPress={()=>router.push("/auth/signup")}
+
+>
+
+<Text>
+Don't have an account? Create one
 </Text>
 
 </Pressable>
@@ -151,7 +256,8 @@ marginBottom:15
 button:{
 backgroundColor:"#222",
 padding:15,
-borderRadius:10
+borderRadius:10,
+alignItems:"center"
 },
 
 buttonText:{
@@ -161,7 +267,12 @@ textAlign:"center"
 
 error:{
 color:"red",
-marginBottom:10
+marginBottom:15
+},
+
+signup:{
+marginTop:20,
+alignItems:"center"
 }
 
 });
