@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React,{useState} from "react";
 
 import {
 View,
@@ -53,7 +53,7 @@ const [loading,setLoading]=useState(false);
 async function signup(){
 
 
-if(!name || !email || !password){
+if(!name.trim() || !email.trim() || !password){
 
 Alert.alert(
 "Missing information",
@@ -66,11 +66,24 @@ return;
 
 
 
+if(password.length < 6){
+
+Alert.alert(
+"Password too short",
+"Password must be at least 6 characters"
+);
+
+return;
+
+}
+
+
+
 if(!accountType){
 
 Alert.alert(
 "Choose account type",
-"Please select an account type"
+"Please select Guest, Business Owner or Property Host"
 );
 
 return;
@@ -83,9 +96,6 @@ try{
 
 
 setLoading(true);
-
-
-console.log("Starting signup");
 
 
 
@@ -102,10 +112,6 @@ password
 
 
 
-console.log("Auth result",data,error);
-
-
-
 if(error){
 
 throw error;
@@ -119,9 +125,11 @@ if(!data.user){
 setLoading(false);
 
 Alert.alert(
-"Email verification required",
-"Please check your email and verify your account before logging in."
+"Check your email",
+"Your account was created. Please verify your email before logging in."
 );
+
+router.replace("/auth/verify");
 
 return;
 
@@ -139,17 +147,13 @@ error:profileError
 
 id:data.user.id,
 
-full_name:name,
+full_name:name.trim(),
 
 email:email.trim(),
 
 account_type:accountType
 
 });
-
-
-
-console.log("Profile error",profileError);
 
 
 
@@ -172,21 +176,10 @@ Alert.alert(
 
 
 
-if(accountType==="business"){
-
-router.replace("/business/dashboard");
-
-}
-else if(accountType==="host"){
-
-router.replace("/property/dashboard");
-
-}
-else{
+// Everyone goes home.
+// Dashboard options appear from their account type.
 
 router.replace("/");
-
-}
 
 
 
@@ -195,15 +188,41 @@ router.replace("/");
 catch(error){
 
 
-console.log("Signup failed",error);
+console.log(error);
+
 
 
 setLoading(false);
 
 
+
+let message="Something went wrong";
+
+
+
+if(error.message?.includes("already registered")){
+
+message="This email already has an account";
+
+}
+
+else if(error.message?.includes("Invalid email")){
+
+message="Please enter a valid email address";
+
+}
+
+else{
+
+message=error.message;
+
+}
+
+
+
 Alert.alert(
 "Signup failed",
-error.message || "Something went wrong"
+message
 );
 
 
@@ -292,11 +311,8 @@ ACCOUNT_TYPES.map(type=>(
 key={type.value}
 
 style={[
-
 styles.option,
-
 accountType===type.value && styles.selected
-
 ]}
 
 onPress={()=>setAccountType(type.value)}
@@ -332,8 +348,8 @@ disabled={loading}
 
 >
 
-
 {
+
 loading
 
 ?
@@ -348,8 +364,8 @@ Create Account
 
 }
 
-
 </Pressable>
+
 
 
 </ScrollView>
