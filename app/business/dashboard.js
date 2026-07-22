@@ -38,6 +38,7 @@ const {
 data:{
 user
 }
+
 }=await supabase.auth.getUser();
 
 
@@ -52,13 +53,61 @@ return;
 
 
 
-const {data,error}=await supabase
+// Find businesses connected through approved claims
+
+const {
+data:claims,
+error:claimError
+
+}=await supabase
+
+.from("claims")
+
+.select("business_id")
+
+.eq("user_id",user.id)
+
+.eq("status","approved");
+
+
+
+if(claimError){
+
+console.log(claimError);
+
+setStatus("Error loading claims");
+
+return;
+
+}
+
+
+
+if(!claims || claims.length===0){
+
+setStatus("No business listings yet");
+
+return;
+
+}
+
+
+
+const ids=claims.map(item=>item.business_id);
+
+
+
+const {
+data,
+error
+
+}=await supabase
 
 .from("businesses")
 
 .select("*")
 
-.eq("owner_id",user.id);
+.in("id",ids);
 
 
 
@@ -74,15 +123,13 @@ return;
 
 
 
-if(data && data.length > 0){
+setBusinesses(data || []);
 
-setBusinesses(data);
+
+
+if(data.length){
 
 setStatus("Your Businesses");
-
-}else{
-
-setStatus("No business listings yet");
 
 }
 
@@ -99,6 +146,7 @@ return(
 <Text style={styles.title}>
 Business Dashboard
 </Text>
+
 
 
 <Text>
@@ -135,6 +183,7 @@ Customer QR Code
 </Text>
 
 
+
 <QRCodeGenerator
 
 businessId={business.id}
@@ -163,12 +212,12 @@ View Public Profile
 
 style={styles.button}
 
-onPress={()=>router.push("/business/reviews")}
+onPress={()=>router.push(`/business/edit/${business.id}`)}
 
 >
 
 <Text style={styles.buttonText}>
-Manage Reviews
+Edit Business
 </Text>
 
 </Pressable>
@@ -184,7 +233,7 @@ Manage Reviews
 
 <Pressable
 
-style={styles.button}
+style={styles.addButton}
 
 onPress={()=>router.push("/business/add")}
 
@@ -243,9 +292,17 @@ borderRadius:10,
 marginTop:15
 },
 
+addButton:{
+backgroundColor:"#0066ff",
+padding:15,
+borderRadius:10,
+marginTop:25
+},
+
 buttonText:{
 color:"white",
-textAlign:"center"
+textAlign:"center",
+fontWeight:"bold"
 }
 
 });
