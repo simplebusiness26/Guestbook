@@ -26,6 +26,8 @@ const [business,setBusiness]=useState(null);
 
 const [reviews,setReviews]=useState([]);
 
+const [canClaim,setCanClaim]=useState(false);
+
 
 
 useEffect(()=>{
@@ -34,7 +36,73 @@ loadBusiness();
 
 loadReviews();
 
+checkUser();
+
 },[]);
+
+
+
+async function checkUser(){
+
+
+const {
+data:{
+user
+}
+
+}=await supabase.auth.getUser();
+
+
+
+if(!user){
+
+setCanClaim(false);
+
+return;
+
+}
+
+
+
+const {
+data:profile,
+error
+
+}=await supabase
+
+.from("profiles")
+
+.select("account_type")
+
+.eq("id",user.id)
+
+.single();
+
+
+
+if(error){
+
+console.log(error);
+
+return;
+
+}
+
+
+
+if(profile.account_type==="business"){
+
+setCanClaim(true);
+
+}else{
+
+setCanClaim(false);
+
+}
+
+
+}
+
 
 
 
@@ -66,6 +134,7 @@ setBusiness(data);
 
 
 }
+
 
 
 
@@ -139,11 +208,27 @@ return(
 
 
 
+{
+canClaim && !business.owner_id &&
+
 <ClaimButton
 
 businessId={id}
 
 />
+
+}
+
+
+
+{
+business.owner_id &&
+
+<Text style={styles.verified}>
+✓ Verified Business
+</Text>
+
+}
 
 
 
@@ -153,7 +238,8 @@ Reviews
 
 
 
-{reviews.map(review=>(
+{
+reviews.map(review=>(
 
 <View
 
@@ -181,7 +267,9 @@ style={styles.review}
 
 </View>
 
-))}
+))
+
+}
 
 
 
@@ -206,6 +294,11 @@ fontWeight:"bold"
 
 description:{
 marginVertical:20
+},
+
+verified:{
+marginTop:20,
+fontWeight:"bold"
 },
 
 heading:{
