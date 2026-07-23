@@ -18,6 +18,8 @@ export default function Home(){
 
 const [loggedIn,setLoggedIn]=useState(false);
 
+const [isAdmin,setIsAdmin]=useState(false);
+
 const [loading,setLoading]=useState(true);
 
 
@@ -53,6 +55,7 @@ subscription.unsubscribe();
 
 
 
+
 async function checkUser(){
 
 
@@ -65,13 +68,57 @@ user
 
 
 
-setLoggedIn(!!user);
+if(!user){
+
+setLoggedIn(false);
+
+setIsAdmin(false);
+
+setLoading(false);
+
+return;
+
+}
+
+
+
+setLoggedIn(true);
+
+
+
+const {
+data:profile,
+error
+}=await supabase
+
+.from("profiles")
+
+.select("is_admin")
+
+.eq("id",user.id)
+
+.single();
+
+
+
+if(!error && profile){
+
+setIsAdmin(profile.is_admin);
+
+}else{
+
+setIsAdmin(false);
+
+}
+
 
 
 setLoading(false);
 
 
 }
+
+
 
 
 
@@ -185,6 +232,27 @@ onPress={()=>router.push("/menu")}
 
 
 
+{
+isAdmin &&
+
+<Pressable
+
+style={styles.adminButton}
+
+onPress={()=>router.push("/admin/dashboard")}
+
+>
+
+<Text style={styles.buttonText}>
+⚙️ Admin Dashboard
+</Text>
+
+</Pressable>
+
+}
+
+
+
 </View>
 
 );
@@ -231,6 +299,15 @@ backgroundColor:"#0066ff",
 width:"90%",
 padding:16,
 borderRadius:12
+},
+
+
+adminButton:{
+backgroundColor:"#6600ff",
+width:"90%",
+padding:16,
+borderRadius:12,
+marginTop:15
 },
 
 
