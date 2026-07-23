@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from "react";
+
 import {
 View,
 Text,
@@ -9,19 +10,26 @@ ActivityIndicator
 } from "react-native";
 
 import {useLocalSearchParams, router} from "expo-router";
+
 import {supabase} from "../../services/supabase";
+
 import QRCodeGenerator from "../../components/QRCodeGenerator";
+
+import ClaimButton from "../../components/ClaimButton";
 
 
 export default function PropertyDetails(){
 
-const params = useLocalSearchParams();
+const {id} = useLocalSearchParams();
 
-const propertyId = params.id;
+const propertyId = id;
 
 
 const [property,setProperty]=useState(null);
+
 const [reviews,setReviews]=useState([]);
+
+const [canClaim,setCanClaim]=useState(false);
 
 
 
@@ -30,11 +38,76 @@ useEffect(()=>{
 if(propertyId){
 
 loadProperty();
+
 loadReviews();
+
+checkUser();
 
 }
 
 },[propertyId]);
+
+
+
+async function checkUser(){
+
+const {
+data:{
+user
+}
+}=await supabase.auth.getUser();
+
+
+
+if(!user){
+
+setCanClaim(false);
+
+return;
+
+}
+
+
+
+const {
+data:profile,
+error
+}=await supabase
+
+.from("profiles")
+
+.select("account_type")
+
+.eq("id",user.id)
+
+.single();
+
+
+
+if(error){
+
+console.log(error);
+
+setCanClaim(false);
+
+return;
+
+}
+
+
+
+if(profile.account_type === "host"){
+
+setCanClaim(true);
+
+}else{
+
+setCanClaim(false);
+
+}
+
+
+}
 
 
 
@@ -77,7 +150,12 @@ const {data,error}=await supabase
 
 .eq("property_id",propertyId)
 
-.order("created_at",{ascending:false});
+.order(
+"created_at",
+{
+ascending:false
+}
+);
 
 
 
@@ -143,6 +221,30 @@ Booking:
 
 
 
+{
+canClaim && !property.owner_id &&
+
+<ClaimButton
+
+propertyId={propertyId}
+
+/>
+
+}
+
+
+
+{
+property.owner_id &&
+
+<Text style={styles.verified}>
+✓ Verified Property
+</Text>
+
+}
+
+
+
 <Text style={styles.qrTitle}>
 Scan for Guestbook
 </Text>
@@ -158,11 +260,15 @@ Reviews ({reviews.length})
 
 
 
-{reviews.map((review)=>(
+{
+reviews.map((review)=>(
 
 <View
+
 key={review.id}
+
 style={styles.review}
+
 >
 
 <Text>
@@ -182,7 +288,9 @@ style={styles.review}
 
 </View>
 
-))}
+))
+
+}
 
 
 
@@ -240,6 +348,11 @@ marginTop:20
 booking:{
 fontWeight:"bold",
 marginTop:20
+},
+
+verified:{
+marginTop:20,
+fontWeight:"bold"
 },
 
 qrTitle:{
