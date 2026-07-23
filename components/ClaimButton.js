@@ -1,4 +1,4 @@
-import React,{useState,useEffect} from "react";
+import React,{useEffect,useState} from "react";
 
 import {
 Pressable,
@@ -19,7 +19,7 @@ propertyId
 
 const [loading,setLoading]=useState(false);
 
-const [claimed,setClaimed]=useState(false);
+const [status,setStatus]=useState(null);
 
 
 
@@ -33,6 +33,7 @@ checkClaim();
 
 async function checkClaim(){
 
+
 const {
 data:{
 user
@@ -41,7 +42,12 @@ user
 }=await supabase.auth.getUser();
 
 
-if(!user) return;
+
+if(!user){
+
+return;
+
+}
 
 
 
@@ -49,7 +55,7 @@ let query=supabase
 
 .from("claims")
 
-.select("*")
+.select("status")
 
 .eq("user_id",user.id);
 
@@ -65,6 +71,7 @@ businessId
 }
 
 
+
 if(propertyId){
 
 query=query.eq(
@@ -76,7 +83,11 @@ propertyId
 
 
 
-const {data,error}=await query;
+const {
+data,
+error
+}=await query;
+
 
 
 if(error){
@@ -91,24 +102,16 @@ return;
 
 if(data && data.length){
 
-setClaimed(true);
+
+const latest=data[data.length-1];
+
+
+setStatus(latest.status);
+
 
 }
 
-}
 
-
-
-
-function handlePress(){
-
-Alert.alert(
-"Pressed",
-"Claim button is working"
-);
-
-
-submitClaim();
 
 }
 
@@ -118,15 +121,7 @@ submitClaim();
 async function submitClaim(){
 
 
-if(loading) return;
-
-
-if(claimed){
-
-Alert.alert(
-"Already Submitted",
-"You have already claimed this listing."
-);
+if(loading){
 
 return;
 
@@ -141,25 +136,9 @@ setLoading(true);
 const {
 data:{
 user
-},
-error:userError
+}
 
 }=await supabase.auth.getUser();
-
-
-
-if(userError){
-
-Alert.alert(
-"Error",
-userError.message
-);
-
-setLoading(false);
-
-return;
-
-}
 
 
 
@@ -167,7 +146,7 @@ if(!user){
 
 Alert.alert(
 "Login required",
-"Please login before claiming a listing"
+"Please login before claiming."
 );
 
 setLoading(false);
@@ -178,7 +157,46 @@ return;
 
 
 
-const {error}=await supabase
+const {
+data:existing
+}=await supabase
+
+.from("claims")
+
+.select("id,status")
+
+.eq("user_id",user.id)
+
+.eq(
+businessId ? "business_id":"property_id",
+businessId || propertyId
+);
+
+
+
+if(existing && existing.length){
+
+
+Alert.alert(
+"Already Submitted",
+"You already have a claim for this listing."
+);
+
+
+setStatus(existing[0].status);
+
+setLoading(false);
+
+return;
+
+}
+
+
+
+
+const {
+error
+}=await supabase
 
 .from("claims")
 
@@ -199,10 +217,9 @@ status:"pending"
 if(error){
 
 Alert.alert(
-"Database Error",
+"Error",
 error.message
 );
-
 
 setLoading(false);
 
@@ -212,19 +229,19 @@ return;
 
 
 
-setClaimed(true);
+setStatus("pending");
 
 setLoading(false);
 
 
-
 Alert.alert(
 "Success",
-"Claim request submitted"
+"Claim submitted for approval."
 );
 
 
 }
+
 
 
 
@@ -234,9 +251,12 @@ return(
 
 style={styles.button}
 
-onPress={handlePress}
+onPress={submitClaim}
+
+disabled={loading || status}
 
 >
+
 
 {
 
@@ -249,11 +269,25 @@ loading ?
 <Text style={styles.text}>
 
 {
-claimed
+
+status==="pending"
+
 ?
+
 "Claim Pending"
+
 :
-"Test Claim Button"
+
+status==="approved"
+
+?
+
+"Already Claimed"
+
+:
+
+"Claim this listing"
+
 }
 
 </Text>
