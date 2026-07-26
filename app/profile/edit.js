@@ -21,6 +21,8 @@ export default function EditProfile(){
 
 const [name,setName]=useState("");
 
+const [phone,setPhone]=useState("");
+
 const [bio,setBio]=useState("");
 
 const [photo,setPhoto]=useState("");
@@ -37,6 +39,8 @@ loadProfile();
 
 
 
+
+
 async function loadProfile(){
 
 
@@ -48,7 +52,18 @@ user
 
 
 
-const {data}=await supabase
+if(!user){
+
+return;
+
+}
+
+
+
+const {
+data,
+error
+}=await supabase
 
 .from("profiles")
 
@@ -60,9 +75,21 @@ const {data}=await supabase
 
 
 
+if(error){
+
+console.log(error.message);
+
+return;
+
+}
+
+
+
 if(data){
 
 setName(data.full_name || "");
+
+setPhone(data.phone || "");
 
 setBio(data.bio || "");
 
@@ -72,6 +99,8 @@ setPhoto(data.profile_photo || "");
 
 
 }
+
+
 
 
 
@@ -101,6 +130,8 @@ setPhoto(result.assets[0].uri);
 
 
 
+
+
 async function saveProfile(){
 
 
@@ -109,6 +140,14 @@ data:{
 user
 }
 }=await supabase.auth.getUser();
+
+
+
+if(!user){
+
+return;
+
+}
 
 
 
@@ -124,12 +163,15 @@ const response = await fetch(file.uri);
 const blob = await response.blob();
 
 
+
 const filename =
 `${user.id}.jpg`;
 
 
 
-const {error}=await supabase.storage
+const {
+error
+}=await supabase.storage
 
 .from("profile-images")
 
@@ -142,7 +184,7 @@ upsert:true
 
 if(error){
 
-console.log(error);
+console.log(error.message);
 
 return;
 
@@ -150,7 +192,9 @@ return;
 
 
 
-const {data}=supabase.storage
+const {
+data
+}=supabase.storage
 
 .from("profile-images")
 
@@ -165,15 +209,21 @@ imageUrl=data.publicUrl;
 
 
 
-const {error}=await supabase
+
+
+const {
+error
+}=await supabase
 
 .from("profiles")
 
 .update({
 
-full_name:name,
+full_name:name.trim(),
 
-bio:bio,
+phone:phone.trim(),
+
+bio:bio.trim(),
 
 profile_photo:imageUrl
 
@@ -185,7 +235,7 @@ profile_photo:imageUrl
 
 if(error){
 
-console.log(error);
+console.log(error.message);
 
 return;
 
@@ -200,6 +250,8 @@ router.back();
 
 
 
+
+
 return(
 
 <View style={styles.container}>
@@ -211,7 +263,9 @@ Edit Profile
 
 
 
-{photo &&
+
+{
+photo &&
 
 <Image
 
@@ -222,6 +276,8 @@ style={styles.image}
 />
 
 }
+
+
 
 
 
@@ -241,6 +297,8 @@ Choose Profile Photo
 
 
 
+
+
 <TextInput
 
 style={styles.input}
@@ -255,6 +313,26 @@ onChangeText={setName}
 
 
 
+
+
+<TextInput
+
+style={styles.input}
+
+placeholder="Phone number"
+
+keyboardType="phone-pad"
+
+value={phone}
+
+onChangeText={setPhone}
+
+/>
+
+
+
+
+
 <TextInput
 
 style={styles.input}
@@ -266,6 +344,8 @@ value={bio}
 onChangeText={setBio}
 
 />
+
+
 
 
 
@@ -285,11 +365,15 @@ Save Profile
 
 
 
+
+
 </View>
 
 );
 
 }
+
+
 
 
 
@@ -299,11 +383,13 @@ container:{
 padding:30
 },
 
+
 title:{
 fontSize:30,
 fontWeight:"bold",
 marginBottom:20
 },
+
 
 image:{
 width:120,
@@ -312,12 +398,14 @@ borderRadius:60,
 marginBottom:20
 },
 
+
 input:{
 borderWidth:1,
 padding:15,
 borderRadius:10,
 marginBottom:15
 },
+
 
 button:{
 backgroundColor:"#222",
@@ -326,9 +414,11 @@ borderRadius:10,
 marginTop:10
 },
 
+
 text:{
 color:"white",
 textAlign:"center"
 }
+
 
 });
