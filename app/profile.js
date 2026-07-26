@@ -299,7 +299,7 @@ Bio
 
 style={styles.button}
 
-onPress={()=>router.push("/Profile/Edit")}
+onPress={()=>router.push("/profile/edit")}
 
 >
 
