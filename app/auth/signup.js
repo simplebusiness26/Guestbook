@@ -42,6 +42,8 @@ const [name,setName]=useState("");
 
 const [email,setEmail]=useState("");
 
+const [phone,setPhone]=useState("");
+
 const [password,setPassword]=useState("");
 
 const [accountType,setAccountType]=useState("");
@@ -50,14 +52,40 @@ const [loading,setLoading]=useState(false);
 
 
 
+function validEmail(email){
+
+return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+}
+
+
+
 async function signup(){
 
 
-if(!name.trim() || !email.trim() || !password){
+if(
+!name.trim() ||
+!email.trim() ||
+!phone.trim() ||
+!password
+){
 
 Alert.alert(
 "Missing information",
 "Please complete all fields"
+);
+
+return;
+
+}
+
+
+
+if(!validEmail(email.trim())){
+
+Alert.alert(
+"Invalid email",
+"Please enter a valid email address"
 );
 
 return;
@@ -120,16 +148,18 @@ throw error;
 
 
 
-if(!data.user){
+if(data.user && !data.session){
 
 setLoading(false);
 
+
 Alert.alert(
-"Check your email",
-"Your account was created. Please verify your email before logging in."
+"Verify email",
+"Your account has been created. Please verify your email before logging in."
 );
 
-router.replace("/auth/verify");
+
+router.replace("/auth/login");
 
 return;
 
@@ -151,8 +181,12 @@ full_name:name.trim(),
 
 email:email.trim(),
 
+phone:phone.trim(),
+
 account_type:accountType
 
+},{
+onConflict:"id"
 });
 
 
@@ -176,9 +210,6 @@ Alert.alert(
 
 
 
-// Everyone goes home.
-// Dashboard options appear from their account type.
-
 router.replace("/");
 
 
@@ -200,13 +231,13 @@ let message="Something went wrong";
 
 
 
-if(error.message?.includes("already registered")){
+if(error.message?.toLowerCase().includes("already")){
 
 message="This email already has an account";
 
 }
 
-else if(error.message?.includes("Invalid email")){
+else if(error.message?.toLowerCase().includes("invalid email")){
 
 message="Please enter a valid email address";
 
@@ -275,6 +306,22 @@ keyboardType="email-address"
 value={email}
 
 onChangeText={setEmail}
+
+/>
+
+
+
+<TextInput
+
+style={styles.input}
+
+placeholder="Phone number"
+
+keyboardType="phone-pad"
+
+value={phone}
+
+onChangeText={setPhone}
 
 />
 
@@ -354,7 +401,15 @@ loading
 
 ?
 
+<View style={styles.loadingContainer}>
+
 <ActivityIndicator color="white"/>
+
+<Text style={styles.buttonText}>
+Creating...
+</Text>
+
+</View>
 
 :
 
@@ -428,6 +483,12 @@ alignItems:"center"
 buttonText:{
 color:"white",
 fontWeight:"bold"
+},
+
+loadingContainer:{
+flexDirection:"row",
+alignItems:"center",
+gap:10
 }
 
 });
