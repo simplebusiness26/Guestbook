@@ -23,9 +23,7 @@ const [loading,setLoading]=useState(true);
 
 useEffect(()=>{
 
-
 loadProfile();
-
 
 
 const {
@@ -40,7 +38,6 @@ loadProfile();
 });
 
 
-
 return()=>{
 
 subscription.unsubscribe();
@@ -53,12 +50,10 @@ subscription.unsubscribe();
 
 
 
-
 async function loadProfile(){
 
 
 setLoading(true);
-
 
 
 const {
@@ -85,7 +80,6 @@ return;
 const {
 data,
 error
-
 }=await supabase
 
 .from("profiles")
@@ -132,16 +126,14 @@ const {error}=await supabase.auth.signOut();
 
 if(error){
 
-console.log("Logout error:",error.message);
+console.log(error.message);
 
 return;
 
 }
 
 
-
 setProfile(null);
-
 
 
 router.replace("/");
@@ -179,19 +171,14 @@ return(
 
 <View style={styles.container}>
 
-
 <Text style={styles.title}>
 No profile found
 </Text>
 
 
-
 <Pressable
-
 style={styles.button}
-
 onPress={()=>router.push("/auth/login")}
-
 >
 
 <Text style={styles.buttonText}>
@@ -222,14 +209,12 @@ My Profile
 
 
 
-
 <View style={styles.card}>
 
 
 <Text style={styles.label}>
 Name
 </Text>
-
 
 <Text style={styles.value}>
 {profile.full_name || "No name"}
@@ -242,11 +227,20 @@ Name
 Email
 </Text>
 
-
 <Text style={styles.value}>
 {profile.email}
 </Text>
 
+
+
+
+<Text style={styles.label}>
+Phone
+</Text>
+
+<Text style={styles.value}>
+{profile.phone || "No phone added"}
+</Text>
 
 
 
@@ -256,11 +250,10 @@ Account Type
 </Text>
 
 
-
 <Text style={styles.value}>
 
 {
-profile.account_type === "business"
+profile.account_type==="business"
 
 ?
 
@@ -268,7 +261,7 @@ profile.account_type === "business"
 
 :
 
-profile.account_type === "host"
+profile.account_type==="host"
 
 ?
 
@@ -285,11 +278,9 @@ profile.account_type === "host"
 
 
 
-
 <Text style={styles.label}>
 Bio
 </Text>
-
 
 
 <Text style={styles.value}>
@@ -299,6 +290,24 @@ Bio
 
 
 </View>
+
+
+
+
+
+<Pressable
+
+style={styles.button}
+
+onPress={()=>router.push("/Profile/Edit")}
+
+>
+
+<Text style={styles.buttonText}>
+Edit Profile
+</Text>
+
+</Pressable>
 
 
 
@@ -354,15 +363,11 @@ onPress={logout}
 
 >
 
-
 <Text style={styles.logoutText}>
 Logout
 </Text>
 
-
 </Pressable>
-
-
 
 
 
@@ -415,7 +420,7 @@ button:{
 backgroundColor:"#222",
 padding:16,
 borderRadius:10,
-marginTop:25
+marginTop:15
 },
 
 
