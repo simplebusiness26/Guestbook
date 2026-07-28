@@ -23,8 +23,10 @@ const { id } = useLocalSearchParams();
 
 
 const [loading,setLoading] = useState(true);
+const [saving,setSaving] = useState(false);
 
 const [business,setBusiness] = useState(null);
+
 
 const [name,setName] = useState("");
 const [description,setDescription] = useState("");
@@ -32,6 +34,9 @@ const [phone,setPhone] = useState("");
 const [website,setWebsite] = useState("");
 const [address,setAddress] = useState("");
 const [category,setCategory] = useState("");
+const [image,setImage] = useState("");
+const [openingHours,setOpeningHours] = useState("");
+
 
 
 
@@ -46,24 +51,7 @@ loadBusiness();
 
 
 
-
 async function loadBusiness(){
-
-
-if(!id){
-
-Alert.alert(
-"Error",
-"No business ID found"
-);
-
-router.back();
-
-return;
-
-}
-
-
 
 
 const {
@@ -72,7 +60,6 @@ user
 }
 
 }=await supabase.auth.getUser();
-
 
 
 
@@ -88,8 +75,6 @@ router.back();
 return;
 
 }
-
-
 
 
 
@@ -113,21 +98,16 @@ error
 
 
 
-
-
 if(error || !data){
-
 
 Alert.alert(
 "Access denied",
 "You do not own this business"
 );
 
-
 router.back();
 
 return;
-
 
 }
 
@@ -143,6 +123,8 @@ setPhone(data.phone || "");
 setWebsite(data.website || "");
 setAddress(data.address || "");
 setCategory(data.category || "");
+setImage(data.image || "");
+setOpeningHours(data.opening_hours || "");
 
 
 setLoading(false);
@@ -159,12 +141,14 @@ setLoading(false);
 async function save(){
 
 
-if(!business){
+if(!business || saving){
 
 return;
 
 }
 
+
+setSaving(true);
 
 
 
@@ -181,13 +165,19 @@ description,
 phone,
 website,
 address,
-category
+category,
+image,
+opening_hours:openingHours
 
 })
 
 .eq("id",business.id);
 
 
+
+
+
+setSaving(false);
 
 
 
@@ -316,7 +306,15 @@ return(
 
 return(
 
-<View style={styles.container}>
+<ScrollView
+
+style={styles.container}
+
+contentContainerStyle={{
+paddingBottom:50
+}}
+
+>
 
 
 <Text style={styles.title}>
@@ -328,90 +326,80 @@ Edit Business
 
 
 <TextInput
-
 style={styles.input}
-
 value={name}
-
 onChangeText={setName}
-
 placeholder="Business name"
-
 />
 
 
 
 
 <TextInput
-
 style={styles.input}
-
 value={category}
-
 onChangeText={setCategory}
-
 placeholder="Category"
-
 />
 
 
 
 
 <TextInput
-
 style={styles.input}
-
 value={description}
-
 onChangeText={setDescription}
-
 placeholder="Description"
-
 />
 
 
 
 
 <TextInput
-
 style={styles.input}
-
 value={address}
-
 onChangeText={setAddress}
-
 placeholder="Address"
-
 />
 
 
 
 
 <TextInput
-
 style={styles.input}
-
 value={phone}
-
 onChangeText={setPhone}
-
 placeholder="Phone"
-
 />
 
 
 
 
 <TextInput
-
 style={styles.input}
-
 value={website}
-
 onChangeText={setWebsite}
-
 placeholder="Website"
+/>
 
+
+
+
+<TextInput
+style={styles.input}
+value={image}
+onChangeText={setImage}
+placeholder="Main image URL"
+/>
+
+
+
+
+<TextInput
+style={styles.input}
+value={openingHours}
+onChangeText={setOpeningHours}
+placeholder="Opening hours"
 />
 
 
@@ -426,9 +414,18 @@ onPress={save}
 
 >
 
+{
+saving ?
+
+<ActivityIndicator color="white"/>
+
+:
+
 <Text style={styles.buttonText}>
 Save Changes
 </Text>
+
+}
 
 </Pressable>
 
@@ -453,7 +450,7 @@ Delete Business
 
 
 
-</View>
+</ScrollView>
 
 );
 
