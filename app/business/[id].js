@@ -5,8 +5,8 @@ View,
 Text,
 StyleSheet,
 ScrollView,
-Pressable,
-Linking
+Image,
+Pressable
 } from "react-native";
 
 import {
@@ -20,25 +20,36 @@ import ClaimButton from "../../components/ClaimButton";
 
 export default function BusinessPage(){
 
+
 const {id}=useLocalSearchParams();
 
+
 const [business,setBusiness]=useState(null);
+
 const [reviews,setReviews]=useState([]);
+
 const [canClaim,setCanClaim]=useState(false);
+
+const [averageRating,setAverageRating]=useState(0);
 
 
 
 useEffect(()=>{
 
 loadBusiness();
+
 loadReviews();
+
 checkUser();
 
 },[]);
 
 
 
+
+
 async function checkUser(){
+
 
 const {
 data:{
@@ -51,6 +62,7 @@ user
 if(!user){
 
 setCanClaim(false);
+
 return;
 
 }
@@ -81,6 +93,7 @@ setCanClaim(false);
 
 }
 
+
 }
 
 
@@ -88,6 +101,7 @@ setCanClaim(false);
 
 
 async function loadBusiness(){
+
 
 const {
 data,
@@ -107,6 +121,7 @@ error
 if(error){
 
 console.log(error);
+
 return;
 
 }
@@ -114,12 +129,15 @@ return;
 
 setBusiness(data);
 
+
 }
 
 
 
 
+
 async function loadReviews(){
+
 
 const {
 data,
@@ -144,47 +162,41 @@ ascending:false
 if(error){
 
 console.log(error);
+
 return;
 
 }
 
 
 
-const reviewData = data || [];
+const reviewData=data || [];
 
 
 setReviews(reviewData);
 
 
 
-// Calculate rating from reviews
-
-if(reviewData.length > 0){
+if(reviewData.length){
 
 
-const total = reviewData.reduce(
+const total=reviewData.reduce(
 
-(sum,review)=>
-sum + Number(review.rating || 0),
+(sum,review)=>{
+
+return sum + Number(review.rating || 0);
+
+},
 
 0
 
 );
 
 
-const average = total / reviewData.length;
+setAverageRating(
 
+(total / reviewData.length).toFixed(1)
 
-
-setBusiness(prev=>({
-
-...prev,
-
-rating: average.toFixed(1),
-
-review_count: reviewData.length
-
-}));
+);
 
 
 }
@@ -198,19 +210,22 @@ review_count: reviewData.length
 
 if(!business){
 
-return(
-
-<View>
-
-<Text>
-Loading...
-</Text>
-
-</View>
-
-);
+return <Text>Loading...</Text>;
 
 }
+
+
+
+const businessImage =
+business.image ||
+(
+business.photos &&
+business.photos.length > 0
+?
+business.photos[0]
+:
+null
+);
 
 
 
@@ -221,7 +236,23 @@ return(
 <ScrollView style={styles.container}>
 
 
-<View>
+{
+businessImage &&
+
+<Image
+
+source={{
+uri:businessImage
+}}
+
+style={styles.image}
+
+/>
+
+}
+
+
+
 
 
 <Text style={styles.title}>
@@ -230,17 +261,14 @@ return(
 
 
 
-
 {
-business.claimed === true ? (
+business.owner_id &&
 
 <Text style={styles.verified}>
 ✓ Verified Business
 </Text>
 
-) : null
 }
-
 
 
 
@@ -251,13 +279,9 @@ business.claimed === true ? (
 
 
 
-
-
 <Text style={styles.description}>
 {business.description}
 </Text>
-
-
 
 
 
@@ -268,65 +292,31 @@ business.claimed === true ? (
 
 
 
+<Text style={styles.rating}>
 
-{
-business.phone ? (
-
-<Pressable
-
-style={styles.button}
-
-onPress={()=>
-Linking.openURL(
-`tel:${business.phone}`
-)
+⭐ {
+averageRating
+?
+averageRating
+:
+"No rating"
 }
 
->
-
-<Text style={styles.buttonText}>
-Call Business
 </Text>
 
-</Pressable>
-
-) : null
-}
 
 
-
-
-
-{
-business.website ? (
-
-<Pressable
-
-style={styles.button}
-
-onPress={()=>
-Linking.openURL(
-business.website
-)
-}
-
->
-
-<Text style={styles.buttonText}>
-Visit Website
+<Text>
+Reviews: {reviews.length}
 </Text>
 
-</Pressable>
-
-) : null
-}
-
 
 
 
 
 {
-canClaim && business.claimed !== true ? (
+canClaim &&
+!business.owner_id &&
 
 <ClaimButton
 
@@ -334,31 +324,7 @@ businessId={id}
 
 />
 
-) : null
 }
-
-
-
-
-
-
-
-<View style={styles.stats}>
-
-
-<Text>
-⭐ {business.rating ? business.rating : "No rating"}
-</Text>
-
-
-
-<Text>
-Reviews: {business.review_count || reviews.length}
-</Text>
-
-
-
-</View>
 
 
 
@@ -373,7 +339,17 @@ Reviews
 
 
 {
-reviews.map((review)=>(
+reviews.length === 0 ?
+
+<Text>
+No reviews yet
+</Text>
+
+
+:
+
+
+reviews.map(review=>(
 
 
 <View
@@ -386,20 +362,17 @@ style={styles.review}
 
 
 <Text>
-⭐ {review.rating || "No rating"}
+⭐ {review.rating}
 </Text>
 
 
-
 <Text>
-{review.comment || "No comment"}
+{review.comment}
 </Text>
 
 
-
-
 <Text>
-{review.name ? `- ${review.name}` : ""}
+- {review.name}
 </Text>
 
 
@@ -409,13 +382,10 @@ style={styles.review}
 
 ))
 
+
 }
 
 
-
-
-
-</View>
 
 
 </ScrollView>
@@ -428,6 +398,7 @@ style={styles.review}
 
 
 
+
 const styles=StyleSheet.create({
 
 container:{
@@ -435,21 +406,30 @@ padding:20
 },
 
 
+image:{
+width:"100%",
+height:220,
+borderRadius:15,
+marginBottom:20
+},
+
+
 title:{
-fontSize:32,
+fontSize:30,
 fontWeight:"bold"
 },
 
 
 verified:{
 marginTop:10,
-fontWeight:"bold"
+fontWeight:"bold",
+fontSize:16
 },
 
 
 category:{
-fontSize:18,
-marginTop:10
+marginTop:10,
+fontSize:18
 },
 
 
@@ -458,24 +438,10 @@ marginVertical:20
 },
 
 
-button:{
-backgroundColor:"#222",
-padding:15,
-borderRadius:10,
-marginTop:10
-},
-
-
-buttonText:{
-color:"white",
-textAlign:"center"
-},
-
-
-stats:{
-flexDirection:"row",
-justifyContent:"space-between",
-marginTop:20
+rating:{
+fontSize:18,
+marginTop:15,
+fontWeight:"bold"
 },
 
 
