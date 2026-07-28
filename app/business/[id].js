@@ -27,6 +27,7 @@ const [reviews,setReviews]=useState([]);
 const [canClaim,setCanClaim]=useState(false);
 
 
+
 useEffect(()=>{
 
 loadBusiness();
@@ -46,6 +47,7 @@ user
 }=await supabase.auth.getUser();
 
 
+
 if(!user){
 
 setCanClaim(false);
@@ -54,24 +56,34 @@ return;
 }
 
 
+
 const {
 data:profile
 }=await supabase
 
 .from("profiles")
+
 .select("account_type")
+
 .eq("id",user.id)
+
 .single();
 
 
 
-if(profile && profile.account_type==="business"){
+if(profile?.account_type==="business"){
 
 setCanClaim(true);
 
+}else{
+
+setCanClaim(false);
+
 }
 
 }
+
+
 
 
 
@@ -83,8 +95,11 @@ error
 }=await supabase
 
 .from("businesses")
+
 .select("*")
+
 .eq("id",id)
+
 .single();
 
 
@@ -103,6 +118,7 @@ setBusiness(data);
 
 
 
+
 async function loadReviews(){
 
 const {
@@ -111,9 +127,17 @@ error
 }=await supabase
 
 .from("reviews")
+
 .select("*")
+
 .eq("business_id",id)
-.order("created_at",{ascending:false});
+
+.order(
+"created_at",
+{
+ascending:false
+}
+);
 
 
 
@@ -125,9 +149,49 @@ return;
 }
 
 
-setReviews(data || []);
+
+const reviewData = data || [];
+
+
+setReviews(reviewData);
+
+
+
+// Calculate rating from reviews
+
+if(reviewData.length > 0){
+
+
+const total = reviewData.reduce(
+
+(sum,review)=>
+sum + Number(review.rating || 0),
+
+0
+
+);
+
+
+const average = total / reviewData.length;
+
+
+
+setBusiness(prev=>({
+
+...prev,
+
+rating: average.toFixed(1),
+
+review_count: reviewData.length
+
+}));
+
 
 }
+
+
+}
+
 
 
 
@@ -135,12 +199,20 @@ setReviews(data || []);
 if(!business){
 
 return(
+
 <View>
-<Text>Loading...</Text>
+
+<Text>
+Loading...
+</Text>
+
 </View>
+
 );
 
 }
+
+
 
 
 
@@ -148,12 +220,15 @@ return(
 
 <ScrollView style={styles.container}>
 
+
 <View>
 
 
 <Text style={styles.title}>
 {business.name}
 </Text>
+
+
 
 
 {
@@ -168,9 +243,13 @@ business.claimed === true ? (
 
 
 
+
+
 <Text style={styles.category}>
 {business.category}
 </Text>
+
+
 
 
 
@@ -180,9 +259,13 @@ business.claimed === true ? (
 
 
 
+
+
 <Text>
 📍 {business.address}
 </Text>
+
+
 
 
 
@@ -190,8 +273,15 @@ business.claimed === true ? (
 business.phone ? (
 
 <Pressable
+
 style={styles.button}
-onPress={()=>Linking.openURL(`tel:${business.phone}`)}
+
+onPress={()=>
+Linking.openURL(
+`tel:${business.phone}`
+)
+}
+
 >
 
 <Text style={styles.buttonText}>
@@ -206,12 +296,20 @@ Call Business
 
 
 
+
 {
 business.website ? (
 
 <Pressable
+
 style={styles.button}
-onPress={()=>Linking.openURL(business.website)}
+
+onPress={()=>
+Linking.openURL(
+business.website
+)
+}
+
 >
 
 <Text style={styles.buttonText}>
@@ -226,10 +324,15 @@ Visit Website
 
 
 
+
 {
 canClaim && business.claimed !== true ? (
 
-<ClaimButton businessId={id}/>
+<ClaimButton
+
+businessId={id}
+
+/>
 
 ) : null
 }
@@ -238,19 +341,25 @@ canClaim && business.claimed !== true ? (
 
 
 
+
+
 <View style={styles.stats}>
 
+
 <Text>
-⭐ {business.rating || "No rating"}
+⭐ {business.rating ? business.rating : "No rating"}
 </Text>
 
 
+
 <Text>
-Reviews: {reviews.length}
+Reviews: {business.review_count || reviews.length}
 </Text>
+
 
 
 </View>
+
 
 
 
@@ -262,14 +371,17 @@ Reviews
 
 
 
-{
-reviews.map((review)=>{
 
-return(
+{
+reviews.map((review)=>(
+
 
 <View
+
 key={review.id}
+
 style={styles.review}
+
 >
 
 
@@ -278,9 +390,12 @@ style={styles.review}
 </Text>
 
 
+
 <Text>
 {review.comment || "No comment"}
 </Text>
+
+
 
 
 <Text>
@@ -288,17 +403,20 @@ style={styles.review}
 </Text>
 
 
+
 </View>
 
-)
 
-})
+))
 
 }
 
 
 
+
+
 </View>
+
 
 </ScrollView>
 
@@ -308,30 +426,37 @@ style={styles.review}
 
 
 
+
+
 const styles=StyleSheet.create({
 
 container:{
 padding:20
 },
 
+
 title:{
 fontSize:32,
 fontWeight:"bold"
 },
+
 
 verified:{
 marginTop:10,
 fontWeight:"bold"
 },
 
+
 category:{
 fontSize:18,
 marginTop:10
 },
 
+
 description:{
 marginVertical:20
 },
+
 
 button:{
 backgroundColor:"#222",
@@ -340,10 +465,12 @@ borderRadius:10,
 marginTop:10
 },
 
+
 buttonText:{
 color:"white",
 textAlign:"center"
 },
+
 
 stats:{
 flexDirection:"row",
@@ -351,11 +478,13 @@ justifyContent:"space-between",
 marginTop:20
 },
 
+
 heading:{
 fontSize:25,
 fontWeight:"bold",
 marginTop:30
 },
+
 
 review:{
 borderWidth:1,
