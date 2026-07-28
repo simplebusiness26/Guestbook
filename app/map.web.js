@@ -1,10 +1,12 @@
 import React, {useEffect, useState} from "react";
+
 import {
 View,
 Text,
 StyleSheet,
 Pressable,
-TextInput
+TextInput,
+ScrollView,
 } from "react-native";
 
 import {router} from "expo-router";
@@ -13,11 +15,13 @@ import {supabase} from "../services/supabase";
 
 export default function MapScreen(){
 
+
 const [businesses,setBusinesses]=useState([]);
 const [properties,setProperties]=useState([]);
 
 const [search,setSearch]=useState("");
 const [category,setCategory]=useState("");
+
 
 
 useEffect(()=>{
@@ -28,23 +32,41 @@ loadPlaces();
 
 
 
+
+
 async function loadPlaces(){
 
-const {data:businessData}=await supabase
+
+const {
+data:businessData
+}=await supabase
+
 .from("businesses")
+
 .select("*");
 
 
-const {data:propertyData}=await supabase
+
+const {
+data:propertyData
+}=await supabase
+
 .from("properties")
+
 .select("*");
+
 
 
 setBusinesses(businessData || []);
 
 setProperties(propertyData || []);
 
+
 }
+
+
+
+
 
 
 
@@ -57,9 +79,11 @@ place.name
 .includes(search.toLowerCase());
 
 
+
 const matchesCategory =
 category === "" ||
 place.category === category;
+
 
 
 return matchesSearch && matchesCategory;
@@ -69,14 +93,28 @@ return matchesSearch && matchesCategory;
 
 
 
+
+
+
+
 return(
 
-<View style={styles.container}>
+
+<ScrollView
+
+style={styles.container}
+
+contentContainerStyle={{
+paddingBottom:40
+}}
+
+>
 
 
 <Text style={styles.title}>
 🗺️ Guestbook
 </Text>
+
 
 
 
@@ -94,10 +132,21 @@ onChangeText={setSearch}
 
 
 
-<View style={styles.categories}>
+
+
+<ScrollView
+
+horizontal
+
+showsHorizontalScrollIndicator={false}
+
+style={styles.categories}
+
+>
 
 
 {["Pub","Cafe","Restaurant"].map(item=>(
+
 
 <Pressable
 
@@ -106,9 +155,12 @@ key={item}
 style={styles.category}
 
 onPress={()=>
+
+
 setCategory(
 category===item ? "" : item
 )
+
 }
 
 >
@@ -117,12 +169,16 @@ category===item ? "" : item
 {item}
 </Text>
 
+
 </Pressable>
+
 
 ))}
 
 
-</View>
+</ScrollView>
+
+
 
 
 
@@ -131,7 +187,11 @@ Businesses
 </Text>
 
 
+
+
+
 {filteredBusinesses.map(place=>(
+
 
 <Pressable
 
@@ -140,22 +200,39 @@ key={place.id}
 style={styles.card}
 
 onPress={()=>
+
+
 router.push(`/business/${place.id}`)
+
+
 }
 
 >
+
 
 <Text style={styles.name}>
 📍 {place.name}
 </Text>
 
+
 <Text>
 {place.category}
 </Text>
 
+
+<Text>
+{place.address}
+</Text>
+
+
 </Pressable>
 
+
 ))}
+
+
+
+
 
 
 
@@ -164,7 +241,12 @@ Properties
 </Text>
 
 
+
+
+
+
 {properties.map(property=>(
+
 
 <Pressable
 
@@ -173,10 +255,15 @@ key={property.id}
 style={styles.card}
 
 onPress={()=>
+
+
 router.push(`/property/${property.id}`)
+
+
 }
 
 >
+
 
 <Text style={styles.name}>
 🏠 {property.name}
@@ -188,13 +275,23 @@ router.push(`/property/${property.id}`)
 </Text>
 
 
+<Text>
+{property.address}
+</Text>
+
+
 </Pressable>
+
 
 ))}
 
 
 
-</View>
+
+
+
+</ScrollView>
+
 
 );
 
@@ -202,16 +299,24 @@ router.push(`/property/${property.id}`)
 
 
 
+
+
+
+
 const styles=StyleSheet.create({
 
+
 container:{
+flex:1,
 padding:20
 },
+
 
 title:{
 fontSize:30,
 fontWeight:"bold"
 },
+
 
 search:{
 borderWidth:1,
@@ -220,10 +325,12 @@ padding:15,
 marginTop:20
 },
 
+
 categories:{
-flexDirection:"row",
-marginTop:15
+marginTop:15,
+maxHeight:50
 },
+
 
 category:{
 borderWidth:1,
@@ -232,11 +339,13 @@ padding:10,
 marginRight:10
 },
 
+
 section:{
 fontSize:22,
 fontWeight:"bold",
 marginTop:25
 },
+
 
 card:{
 borderWidth:1,
@@ -245,9 +354,11 @@ padding:15,
 marginTop:10
 },
 
+
 name:{
 fontSize:18,
 fontWeight:"bold"
 }
+
 
 });
