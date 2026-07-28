@@ -6,7 +6,8 @@ Text,
 StyleSheet,
 ScrollView,
 Image,
-Pressable
+Pressable,
+Linking
 } from "react-native";
 
 import {
@@ -292,6 +293,82 @@ business.owner_id &&
 
 
 
+
+{
+business.opening_hours &&
+
+<Text style={styles.hours}>
+🕒 {business.opening_hours}
+</Text>
+
+}
+
+
+
+
+{
+business.phone &&
+
+<Pressable
+
+style={styles.actionButton}
+
+onPress={()=>
+Linking.openURL(
+`tel:${business.phone}`
+)
+}
+
+>
+
+<Text style={styles.buttonText}>
+📞 Call Business
+</Text>
+
+</Pressable>
+
+}
+
+
+
+
+
+{
+business.website &&
+
+<Pressable
+
+style={styles.actionButton}
+
+onPress={()=>{
+
+let url = business.website;
+
+if(!url.startsWith("http")){
+
+url="https://" + url;
+
+}
+
+Linking.openURL(url);
+
+}}
+
+>
+
+<Text style={styles.buttonText}>
+🌐 Visit Website
+</Text>
+
+</Pressable>
+
+}
+
+
+
+
+
+
 <Text style={styles.rating}>
 
 ⭐ {
@@ -435,6 +512,27 @@ fontSize:18
 
 description:{
 marginVertical:20
+},
+
+
+hours:{
+marginTop:15,
+fontSize:16
+},
+
+
+actionButton:{
+backgroundColor:"#222",
+padding:15,
+borderRadius:10,
+marginTop:15
+},
+
+
+buttonText:{
+color:"white",
+textAlign:"center",
+fontWeight:"bold"
 },
 
 
