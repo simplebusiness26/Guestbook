@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  ScrollView,
 } from "react-native";
 
 import { useLocalSearchParams, router } from "expo-router";
@@ -23,13 +24,14 @@ const { id } = useLocalSearchParams();
 
 const [loading,setLoading] = useState(true);
 
+const [business,setBusiness] = useState(null);
+
 const [name,setName] = useState("");
 const [description,setDescription] = useState("");
 const [phone,setPhone] = useState("");
 const [website,setWebsite] = useState("");
 const [address,setAddress] = useState("");
 const [category,setCategory] = useState("");
-
 
 
 
@@ -49,15 +51,53 @@ async function loadBusiness(){
 
 
 if(!id){
-Alert.alert("Error","No business ID found");
+
+Alert.alert(
+"Error",
+"No business ID found"
+);
+
+router.back();
+
 return;
+
 }
+
+
+
+
+const {
+data:{
+user
+}
+
+}=await supabase.auth.getUser();
+
+
+
+
+if(!user){
+
+Alert.alert(
+"Login required",
+"Please login first"
+);
+
+router.back();
+
+return;
+
+}
+
+
+
 
 
 
 const {
 data,
 error
+
 }=await supabase
 
 .from("businesses")
@@ -66,23 +106,36 @@ error
 
 .eq("id",id)
 
+.eq("owner_id",user.id)
+
 .single();
 
 
 
 
-if(error){
+
+
+if(error || !data){
+
 
 Alert.alert(
-"Load error",
-error.message
+"Access denied",
+"You do not own this business"
 );
 
+
+router.back();
+
 return;
+
 
 }
 
 
+
+
+
+setBusiness(data);
 
 setName(data.name || "");
 setDescription(data.description || "");
@@ -106,6 +159,14 @@ setLoading(false);
 async function save(){
 
 
+if(!business){
+
+return;
+
+}
+
+
+
 
 const {
 error
@@ -124,7 +185,8 @@ category
 
 })
 
-.eq("id",id);
+.eq("id",business.id);
+
 
 
 
@@ -160,21 +222,30 @@ router.back();
 
 
 
+
 async function deleteBusiness(){
 
 
 
 Alert.alert(
-"Delete business",
+
+"Delete Business",
+
 "Are you sure you want to delete this listing?",
+
 [
+
 {
 text:"Cancel",
 style:"cancel"
 },
+
 {
+
 text:"Delete",
+
 style:"destructive",
+
 onPress:async()=>{
 
 
@@ -186,7 +257,8 @@ error
 
 .delete()
 
-.eq("id",id);
+.eq("id",business.id);
+
 
 
 
@@ -207,8 +279,11 @@ router.back();
 
 
 }
+
 }
+
 ]
+
 );
 
 
@@ -247,6 +322,7 @@ return(
 <Text style={styles.title}>
 Edit Business
 </Text>
+
 
 
 
