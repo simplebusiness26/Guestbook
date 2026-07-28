@@ -1,3 +1,4 @@
+
 import React,{useEffect,useState} from "react";
 
 import {
@@ -11,7 +12,8 @@ Linking
 } from "react-native";
 
 import {
-useLocalSearchParams
+useLocalSearchParams,
+router
 } from "expo-router";
 
 import {supabase} from "../../services/supabase";
@@ -29,9 +31,13 @@ const [business,setBusiness]=useState(null);
 
 const [reviews,setReviews]=useState([]);
 
+const [averageRating,setAverageRating]=useState(0);
+
 const [canClaim,setCanClaim]=useState(false);
 
-const [averageRating,setAverageRating]=useState(0);
+const [isOwner,setIsOwner]=useState(false);
+
+
 
 
 
@@ -44,6 +50,8 @@ loadReviews();
 checkUser();
 
 },[]);
+
+
 
 
 
@@ -62,11 +70,10 @@ user
 
 if(!user){
 
-setCanClaim(false);
-
 return;
 
 }
+
 
 
 
@@ -80,7 +87,8 @@ data:profile
 
 .eq("id",user.id)
 
-.single();
+.maybeSingle();
+
 
 
 
@@ -88,14 +96,38 @@ if(profile?.account_type==="business"){
 
 setCanClaim(true);
 
-}else{
+}
 
-setCanClaim(false);
+
+
+
+const {
+data:owned
+}=await supabase
+
+.from("businesses")
+
+.select("id")
+
+.eq("id",id)
+
+.eq("owner_id",user.id)
+
+.maybeSingle();
+
+
+
+if(owned){
+
+setIsOwner(true);
 
 }
 
 
 }
+
+
+
 
 
 
@@ -128,10 +160,14 @@ return;
 }
 
 
+
 setBusiness(data);
 
 
 }
+
+
+
 
 
 
@@ -170,21 +206,20 @@ return;
 
 
 
-const reviewData=data || [];
+const list=data || [];
+
+setReviews(list);
 
 
-setReviews(reviewData);
+
+if(list.length>0){
 
 
+const total=list.reduce(
 
-if(reviewData.length){
+(sum,item)=>{
 
-
-const total=reviewData.reduce(
-
-(sum,review)=>{
-
-return sum + Number(review.rating || 0);
+return sum + Number(item.rating || 0);
 
 },
 
@@ -195,7 +230,7 @@ return sum + Number(review.rating || 0);
 
 setAverageRating(
 
-(total / reviewData.length).toFixed(1)
+(total/list.length).toFixed(1)
 
 );
 
@@ -204,6 +239,59 @@ setAverageRating(
 
 
 }
+
+
+
+
+
+
+
+
+function callBusiness(){
+
+
+if(business.phone){
+
+Linking.openURL(
+`tel:${business.phone}`
+);
+
+}
+
+
+}
+
+
+
+
+
+
+function openWebsite(){
+
+
+if(business.website){
+
+
+let url=business.website;
+
+
+if(!url.startsWith("http")){
+
+url="https://"+url;
+
+}
+
+
+Linking.openURL(url);
+
+
+}
+
+
+}
+
+
+
 
 
 
@@ -211,22 +299,31 @@ setAverageRating(
 
 if(!business){
 
-return <Text>Loading...</Text>;
+return(
+
+<Text>
+Loading...
+</Text>
+
+);
 
 }
 
 
 
-const businessImage =
-business.image ||
-(
-business.photos &&
-business.photos.length > 0
-?
-business.photos[0]
-:
-null
-);
+
+
+
+
+const photos=[
+
+business.image,
+
+...(business.photos || [])
+
+].filter(Boolean);
+
+
 
 
 
@@ -237,20 +334,51 @@ return(
 <ScrollView style={styles.container}>
 
 
+
 {
-businessImage &&
+photos.length > 0 ? (
+
+<View>
+
+<Text style={styles.heading}>
+Photos
+</Text>
+
+
+<ScrollView
+horizontal
+showsHorizontalScrollIndicator={false}
+>
+
+
+{
+photos.map((photo,index)=>(
 
 <Image
 
+key={index}
+
 source={{
-uri:businessImage
+uri:photo
 }}
 
-style={styles.image}
+style={styles.photo}
 
 />
 
+))
+
 }
+
+
+</ScrollView>
+
+
+</View>
+
+) : null
+}
+
 
 
 
@@ -262,14 +390,45 @@ style={styles.image}
 
 
 
+
+
 {
-business.owner_id &&
+Boolean(business.owner_id) ? (
 
 <Text style={styles.verified}>
 ✓ Verified Business
 </Text>
 
+) : null
 }
+
+
+
+
+
+
+{
+Boolean(isOwner) ? (
+
+<Pressable
+
+style={styles.editButton}
+
+onPress={()=>router.push(`/business/edit/${id}`)}
+
+>
+
+<Text style={styles.buttonText}>
+Edit Business
+</Text>
+
+</Pressable>
+
+) : null
+}
+
+
+
 
 
 
@@ -280,9 +439,13 @@ business.owner_id &&
 
 
 
+
+
 <Text style={styles.description}>
 {business.description}
 </Text>
+
+
 
 
 
@@ -294,30 +457,31 @@ business.owner_id &&
 
 
 
-{
-business.opening_hours &&
 
-<Text style={styles.hours}>
+{
+Boolean(business.opening_hours) ? (
+
+<Text style={styles.info}>
 🕒 {business.opening_hours}
 </Text>
 
+) : null
 }
 
 
 
 
+
+
+
 {
-business.phone &&
+Boolean(business.phone) ? (
 
 <Pressable
 
 style={styles.actionButton}
 
-onPress={()=>
-Linking.openURL(
-`tel:${business.phone}`
-)
-}
+onPress={callBusiness}
 
 >
 
@@ -327,32 +491,23 @@ Linking.openURL(
 
 </Pressable>
 
+) : null
 }
+
+
 
 
 
 
 
 {
-business.website &&
+Boolean(business.website) ? (
 
 <Pressable
 
 style={styles.actionButton}
 
-onPress={()=>{
-
-let url = business.website;
-
-if(!url.startsWith("http")){
-
-url="https://" + url;
-
-}
-
-Linking.openURL(url);
-
-}}
+onPress={openWebsite}
 
 >
 
@@ -362,7 +517,9 @@ Linking.openURL(url);
 
 </Pressable>
 
+) : null
 }
+
 
 
 
@@ -370,16 +527,10 @@ Linking.openURL(url);
 
 
 <Text style={styles.rating}>
-
-⭐ {
-averageRating
-?
-averageRating
-:
-"No rating"
-}
-
+⭐ {averageRating ? averageRating : "No rating"}
 </Text>
+
+
 
 
 
@@ -391,9 +542,9 @@ Reviews: {reviews.length}
 
 
 
+
 {
-canClaim &&
-!business.owner_id &&
+Boolean(canClaim && !business.owner_id) ? (
 
 <ClaimButton
 
@@ -401,7 +552,9 @@ businessId={id}
 
 />
 
+) : null
 }
+
 
 
 
@@ -415,19 +568,18 @@ Reviews
 
 
 
+
+
 {
-reviews.length === 0 ?
+reviews.length===0 ? (
 
 <Text>
 No reviews yet
 </Text>
 
-
-:
-
+) : (
 
 reviews.map(review=>(
-
 
 <View
 
@@ -436,7 +588,6 @@ key={review.id}
 style={styles.review}
 
 >
-
 
 <Text>
 ⭐ {review.rating}
@@ -453,12 +604,11 @@ style={styles.review}
 </Text>
 
 
-
 </View>
-
 
 ))
 
+)
 
 }
 
@@ -476,6 +626,9 @@ style={styles.review}
 
 
 
+
+
+
 const styles=StyleSheet.create({
 
 container:{
@@ -483,30 +636,32 @@ padding:20
 },
 
 
-image:{
-width:"100%",
-height:220,
+photo:{
+width:250,
+height:180,
 borderRadius:15,
+marginRight:10,
 marginBottom:20
 },
 
 
 title:{
 fontSize:30,
-fontWeight:"bold"
+fontWeight:"bold",
+marginTop:15
 },
 
 
 verified:{
-marginTop:10,
+fontSize:16,
 fontWeight:"bold",
-fontSize:16
+marginTop:10
 },
 
 
 category:{
-marginTop:10,
-fontSize:18
+fontSize:18,
+marginTop:10
 },
 
 
@@ -515,9 +670,31 @@ marginVertical:20
 },
 
 
-hours:{
-marginTop:15,
-fontSize:16
+info:{
+marginTop:10
+},
+
+
+rating:{
+fontSize:18,
+fontWeight:"bold",
+marginTop:15
+},
+
+
+heading:{
+fontSize:25,
+fontWeight:"bold",
+marginTop:30,
+marginBottom:15
+},
+
+
+review:{
+borderWidth:1,
+borderRadius:10,
+padding:15,
+marginTop:10
 },
 
 
@@ -529,32 +706,19 @@ marginTop:15
 },
 
 
+editButton:{
+backgroundColor:"#0066ff",
+padding:15,
+borderRadius:10,
+marginTop:15
+},
+
+
 buttonText:{
 color:"white",
 textAlign:"center",
 fontWeight:"bold"
-},
-
-
-rating:{
-fontSize:18,
-marginTop:15,
-fontWeight:"bold"
-},
-
-
-heading:{
-fontSize:25,
-fontWeight:"bold",
-marginTop:30
-},
-
-
-review:{
-borderWidth:1,
-borderRadius:10,
-padding:15,
-marginTop:10
 }
+
 
 });
