@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 
 import {
   View,
@@ -9,42 +9,20 @@ import {
   ActivityIndicator,
   Platform,
   Alert,
-} from 'react-native';
+} from "react-native";
 
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useColors } from '@/hooks/useColors';
-import { supabase } from '@/services/supabase';
+import { useColors } from "../../hooks/useColors";
 
-
-interface Claim {
-
-  id:string;
-  user_id:string;
-  business_id:string | null;
-  property_id:string | null;
-  status:string;
-  created_at:string;
-  note:string | null;
-
-  profile?:{
-    full_name?:string;
-    email?:string;
-    phone?:string;
-    account_type?:string;
-  };
-
-  listing_name?:string;
-
-}
+import { supabase } from "../../services/supabase";
 
 
 
 export default function AdminClaimsScreen(){
 
 
-const [claims,setClaims]=useState<Claim[]>([]);
+const [claims,setClaims]=useState([]);
 
 const [loading,setLoading]=useState(true);
 
@@ -55,14 +33,11 @@ const insets=useSafeAreaInsets();
 
 
 
-
 useEffect(()=>{
 
 loadClaims();
 
 },[]);
-
-
 
 
 
@@ -104,32 +79,24 @@ return;
 
 
 
-
-const updatedClaims:Claim[]=[];
+const updatedClaims=[];
 
 
 
 for(const claim of data || []){
 
 
-let profile:any=null;
-
 let listing_name="Unknown listing";
 
 
 
-
-// Profile lookup
-
 const {
-data:profileData
+data:profile
 }=await supabase
 
 .from("profiles")
 
-.select(
-"full_name,email,phone,account_type"
-)
+.select("full_name,email,phone,account_type")
 
 .eq("id",claim.user_id)
 
@@ -137,13 +104,6 @@ data:profileData
 
 
 
-profile=profileData;
-
-
-
-
-
-// Business lookup
 
 if(claim.business_id){
 
@@ -174,9 +134,6 @@ listing_name=business.name;
 
 
 
-
-// Property lookup
-
 if(claim.property_id){
 
 
@@ -206,24 +163,19 @@ listing_name=property.name;
 
 
 
-
 updatedClaims.push({
 
 ...claim,
 
 profile:{
 
-full_name:
-profile?.full_name || "Unknown user",
+full_name:profile?.full_name || "Unknown user",
 
-email:
-profile?.email || claim.user_id,
+email:profile?.email || "No email",
 
-phone:
-profile?.phone || "No phone",
+phone:profile?.phone || "No phone",
 
-account_type:
-profile?.account_type || "Unknown"
+account_type:profile?.account_type || "Unknown"
 
 },
 
@@ -233,14 +185,6 @@ listing_name
 
 
 }
-
-
-
-
-Alert.alert(
-"Debug",
-`Loaded ${updatedClaims.length} claims`
-);
 
 
 
@@ -254,18 +198,12 @@ setLoading(false);
 
 
 
-
-
-
-async function updateClaim(
-id:string,
-status:"approved"|"rejected"
-){
+async function updateClaim(id,status){
 
 
 const {
 data:claim,
-error
+error:claimError
 }=await supabase
 
 .from("claims")
@@ -278,7 +216,7 @@ error
 
 
 
-if(error || !claim){
+if(claimError || !claim){
 
 Alert.alert(
 "Error",
@@ -291,27 +229,18 @@ return;
 
 
 
-await supabase
-
-.from("claims")
-
-.update({
-status
-})
-
-.eq("id",id);
-
-
-
-
 
 if(status==="approved"){
+
 
 
 if(claim.business_id){
 
 
-await supabase
+const {
+data:updatedBusiness,
+error:businessError
+}=await supabase
 
 .from("businesses")
 
@@ -323,17 +252,48 @@ claimed:true
 
 })
 
-.eq("id",claim.business_id);
+.eq("id",claim.business_id)
+
+.select();
+
+
+
+if(businessError){
+
+Alert.alert(
+"Business update failed",
+businessError.message
+);
+
+return;
+
+}
+
+
+
+if(!updatedBusiness || updatedBusiness.length===0){
+
+Alert.alert(
+"Business update failed",
+"No business updated"
+);
+
+return;
+
+}
 
 
 }
 
 
 
+
 if(claim.property_id){
 
 
-await supabase
+const {
+error:propertyError
+}=await supabase
 
 .from("properties")
 
@@ -346,17 +306,58 @@ owner_id:claim.user_id
 .eq("id",claim.property_id);
 
 
+
+if(propertyError){
+
+Alert.alert(
+"Property update failed",
+propertyError.message
+);
+
+return;
+
 }
 
 
 }
 
 
+}
+
+
+
+
+const {
+error:updateError
+}=await supabase
+
+.from("claims")
+
+.update({
+
+status:status
+
+})
+
+.eq("id",id);
+
+
+
+if(updateError){
+
+Alert.alert(
+"Claim update failed",
+updateError.message
+);
+
+return;
+
+}
 
 
 
 Alert.alert(
-"Updated",
+"Success",
 `Claim ${status}`
 );
 
@@ -366,10 +367,6 @@ loadClaims();
 
 
 }
-
-
-
-
 
 
 
@@ -394,8 +391,8 @@ paddingBottom:
 >
 
 
-
 {
+
 loading ?
 
 
@@ -416,36 +413,17 @@ color={colors.primary}
 claims.length===0 ?
 
 
-<View
+<View style={styles.empty}>
 
-style={[
-styles.empty,
-{
-backgroundColor:colors.card,
-borderColor:colors.border
-}
-]}
-
->
-
-<Text
-
-style={{
-color:colors.foreground,
-fontSize:20
-}}
-
->
+<Text>
 No pending claims
 </Text>
-
 
 </View>
 
 
 
 :
-
 
 
 claims.map((c)=>(
@@ -455,27 +433,12 @@ claims.map((c)=>(
 
 key={c.id}
 
-style={[
-styles.card,
-{
-backgroundColor:colors.card,
-borderColor:colors.border
-}
-]}
+style={styles.card}
 
 >
 
 
-<Text
-
-style={[
-styles.title,
-{
-color:colors.foreground
-}
-]}
-
->
+<Text style={styles.title}>
 
 {
 c.business_id
@@ -489,15 +452,13 @@ c.business_id
 
 
 
-
 <Text style={styles.label}>
 Listing
 </Text>
 
-<Text style={styles.value}>
+<Text>
 {c.listing_name}
 </Text>
-
 
 
 
@@ -505,10 +466,9 @@ Listing
 Claimed By
 </Text>
 
-<Text style={styles.value}>
-{c.profile?.full_name}
+<Text>
+{c.profile.full_name}
 </Text>
-
 
 
 
@@ -516,10 +476,9 @@ Claimed By
 Email
 </Text>
 
-<Text style={styles.value}>
-{c.profile?.email}
+<Text>
+{c.profile.email}
 </Text>
-
 
 
 
@@ -527,10 +486,9 @@ Email
 Phone
 </Text>
 
-<Text style={styles.value}>
-{c.profile?.phone}
+<Text>
+{c.profile.phone}
 </Text>
-
 
 
 
@@ -538,10 +496,9 @@ Phone
 Account Type
 </Text>
 
-<Text style={styles.value}>
-{c.profile?.account_type}
+<Text>
+{c.profile.account_type}
 </Text>
-
 
 
 
@@ -549,11 +506,9 @@ Account Type
 Note
 </Text>
 
-<Text style={styles.value}>
+<Text>
 {c.note || "No note"}
 </Text>
-
-
 
 
 
@@ -576,7 +531,6 @@ Approve
 
 
 
-
 <Pressable
 
 style={styles.reject}
@@ -585,7 +539,8 @@ onPress={()=>updateClaim(c.id,"rejected")}
 
 >
 
-<Text style={styles.buttonText}>
+<Text style={styles.buttonText}
+>
 Reject
 </Text>
 
@@ -602,7 +557,6 @@ Reject
 ))
 
 
-
 }
 
 
@@ -616,14 +570,10 @@ Reject
 
 
 
-
-
 const styles=StyleSheet.create({
 
 empty:{
 padding:40,
-borderRadius:15,
-borderWidth:1,
 alignItems:"center"
 },
 
@@ -641,13 +591,9 @@ marginBottom:15
 },
 
 label:{
+marginTop:10,
 fontSize:12,
-color:"#777",
-marginTop:10
-},
-
-value:{
-fontSize:15
+color:"#777"
 },
 
 buttons:{
