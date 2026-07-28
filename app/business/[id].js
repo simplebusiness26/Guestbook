@@ -4,7 +4,9 @@ import {
 View,
 Text,
 StyleSheet,
-ScrollView
+ScrollView,
+Pressable,
+Linking
 } from "react-native";
 
 import {
@@ -18,24 +20,17 @@ import ClaimButton from "../../components/ClaimButton";
 
 export default function BusinessPage(){
 
-
 const {id}=useLocalSearchParams();
 
-
 const [business,setBusiness]=useState(null);
-
 const [reviews,setReviews]=useState([]);
-
 const [canClaim,setCanClaim]=useState(false);
-
 
 
 useEffect(()=>{
 
 loadBusiness();
-
 loadReviews();
-
 checkUser();
 
 },[]);
@@ -44,79 +39,52 @@ checkUser();
 
 async function checkUser(){
 
-
 const {
 data:{
 user
 }
-
 }=await supabase.auth.getUser();
-
 
 
 if(!user){
 
 setCanClaim(false);
-
 return;
 
 }
 
 
-
 const {
-data:profile,
-error
-
+data:profile
 }=await supabase
 
 .from("profiles")
-
 .select("account_type")
-
 .eq("id",user.id)
-
 .single();
 
 
 
-if(error){
-
-console.log(error);
-
-return;
-
-}
-
-
-
-if(profile.account_type==="business"){
+if(profile && profile.account_type==="business"){
 
 setCanClaim(true);
 
-}else{
-
-setCanClaim(false);
-
 }
 
-
 }
-
 
 
 
 async function loadBusiness(){
 
-
-const {data,error}=await supabase
+const {
+data,
+error
+}=await supabase
 
 .from("businesses")
-
 .select("*")
-
 .eq("id",id)
-
 .single();
 
 
@@ -124,7 +92,6 @@ const {data,error}=await supabase
 if(error){
 
 console.log(error);
-
 return;
 
 }
@@ -132,36 +99,27 @@ return;
 
 setBusiness(data);
 
-
 }
-
 
 
 
 async function loadReviews(){
 
-
-const {data,error}=await supabase
+const {
+data,
+error
+}=await supabase
 
 .from("reviews")
-
 .select("*")
-
 .eq("business_id",id)
-
-.order(
-"created_at",
-{
-ascending:false
-}
-);
+.order("created_at",{ascending:false});
 
 
 
 if(error){
 
 console.log(error);
-
 return;
 
 }
@@ -169,14 +127,18 @@ return;
 
 setReviews(data || []);
 
-
 }
+
 
 
 
 if(!business){
 
-return <Text>Loading...</Text>;
+return(
+<View>
+<Text>Loading...</Text>
+</View>
+);
 
 }
 
@@ -186,15 +148,30 @@ return(
 
 <ScrollView style={styles.container}>
 
+<View>
+
 
 <Text style={styles.title}>
 {business.name}
 </Text>
 
 
-<Text>
+{
+business.claimed === true ? (
+
+<Text style={styles.verified}>
+✓ Verified Business
+</Text>
+
+) : null
+}
+
+
+
+<Text style={styles.category}>
 {business.category}
 </Text>
+
 
 
 <Text style={styles.description}>
@@ -202,33 +179,79 @@ return(
 </Text>
 
 
+
 <Text>
-{business.address}
+📍 {business.address}
 </Text>
 
 
 
 {
-canClaim && !business.owner_id &&
+business.phone ? (
 
-<ClaimButton
+<Pressable
+style={styles.button}
+onPress={()=>Linking.openURL(`tel:${business.phone}`)}
+>
 
-businessId={id}
+<Text style={styles.buttonText}>
+Call Business
+</Text>
 
-/>
+</Pressable>
 
+) : null
 }
+
 
 
 
 {
-business.owner_id &&
+business.website ? (
 
-<Text style={styles.verified}>
-✓ Verified Business
+<Pressable
+style={styles.button}
+onPress={()=>Linking.openURL(business.website)}
+>
+
+<Text style={styles.buttonText}>
+Visit Website
 </Text>
 
+</Pressable>
+
+) : null
 }
+
+
+
+
+{
+canClaim && business.claimed !== true ? (
+
+<ClaimButton businessId={id}/>
+
+) : null
+}
+
+
+
+
+
+<View style={styles.stats}>
+
+<Text>
+⭐ {business.rating || "No rating"}
+</Text>
+
+
+<Text>
+Reviews: {reviews.length}
+</Text>
+
+
+</View>
+
 
 
 
@@ -238,40 +261,44 @@ Reviews
 
 
 
+
 {
-reviews.map(review=>(
+reviews.map((review)=>{
+
+return(
 
 <View
-
 key={review.id}
-
 style={styles.review}
-
 >
 
 
 <Text>
-⭐ {review.rating}
+⭐ {review.rating || "No rating"}
 </Text>
 
 
 <Text>
-{review.comment}
+{review.comment || "No comment"}
 </Text>
 
 
 <Text>
-- {review.name}
+{review.name ? `- ${review.name}` : ""}
 </Text>
 
 
 </View>
 
-))
+)
+
+})
 
 }
 
 
+
+</View>
 
 </ScrollView>
 
@@ -288,17 +315,40 @@ padding:20
 },
 
 title:{
-fontSize:30,
+fontSize:32,
 fontWeight:"bold"
+},
+
+verified:{
+marginTop:10,
+fontWeight:"bold"
+},
+
+category:{
+fontSize:18,
+marginTop:10
 },
 
 description:{
 marginVertical:20
 },
 
-verified:{
-marginTop:20,
-fontWeight:"bold"
+button:{
+backgroundColor:"#222",
+padding:15,
+borderRadius:10,
+marginTop:10
+},
+
+buttonText:{
+color:"white",
+textAlign:"center"
+},
+
+stats:{
+flexDirection:"row",
+justifyContent:"space-between",
+marginTop:20
 },
 
 heading:{
