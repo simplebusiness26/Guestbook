@@ -381,18 +381,14 @@ Businesses
 
 
 
-
 <View style={styles.card}>
-
 
 <Text style={styles.heading}>
 Reviews
 </Text>
 
 
-
 {
-
 reviews.length === 0
 
 ?
@@ -421,6 +417,15 @@ style={styles.review}
 
 <Text>
 {review.comment}
+</Text>
+
+
+<Text style={styles.reviewDate}>
+{new Date(review.created_at).toLocaleDateString("en-GB",{
+day:"numeric",
+month:"short",
+year:"numeric"
+})}
 </Text>
 
 
@@ -459,7 +464,6 @@ businesses.length===0
 No businesses yet
 </Text>
 
-
 :
 
 businesses.map(business=>(
@@ -468,14 +472,23 @@ businesses.map(business=>(
 
 key={business.id}
 
+style={styles.businessCard}
+
 onPress={()=>router.push(`/business/${business.id}`)}
 
 >
 
-<Text style={styles.business}>
+<Text style={styles.businessName}>
 {business.name}
 </Text>
 
+<Text style={styles.businessCategory}>
+{business.category}
+</Text>
+
+<Text style={styles.businessLink}>
+View listing →
+</Text>
 
 </Pressable>
 
@@ -531,19 +544,19 @@ height:130,
 borderRadius:65
 },
 
-
 avatarFallback:{
 width:130,
 height:130,
 borderRadius:65,
 justifyContent:"center",
-alignItems:"center"
+alignItems:"center",
+backgroundColor:"#0066ff"
 },
-
 
 avatarLetter:{
 fontSize:50,
-fontWeight:"bold"
+fontWeight:"bold",
+color:"white"
 },
 
 
@@ -609,6 +622,28 @@ borderTopWidth:1,
 borderColor:"#eee",
 paddingTop:15,
 marginTop:15
+},
+businessCard:{
+backgroundColor:"#f8fafc",
+padding:15,
+borderRadius:12,
+marginBottom:10
+},
+
+businessName:{
+fontSize:18,
+fontWeight:"bold"
+},
+
+businessCategory:{
+marginTop:5,
+color:"#667085"
+},
+
+businessLink:{
+marginTop:8,
+color:"#0066ff",
+fontWeight:"bold"
 },
 
 
