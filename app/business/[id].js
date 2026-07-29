@@ -202,7 +202,11 @@ export default function BusinessPage() {
 
             {Boolean(business.owner_id) ? (
               <View style={styles.verifiedPill}>
+<<<<<<< HEAD
                 <Text style={styles.verifiedText}>✓ Verified Business test</Text>
+=======
+                <Text style={styles.verifiedText}>✓ Verified Business</Text>
+>>>>>>> e9f4427ddd87dd9c09bf7e60fed3962687cba859
               </View>
             ) : null}
           </View>
