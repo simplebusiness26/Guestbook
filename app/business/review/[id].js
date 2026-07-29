@@ -6,10 +6,14 @@ Text,
 TextInput,
 Pressable,
 StyleSheet,
-Alert
+ScrollView,
+ActivityIndicator
 } from "react-native";
 
-import {useLocalSearchParams, router} from "expo-router";
+import {
+useLocalSearchParams,
+router
+} from "expo-router";
 
 import {supabase} from "../../../services/supabase";
 
@@ -26,6 +30,10 @@ const [comment,setComment]=useState("");
 
 const [rating,setRating]=useState(5);
 
+const [loading,setLoading]=useState(false);
+
+
+
 
 
 async function submitReview(){
@@ -33,31 +41,30 @@ async function submitReview(){
 
 if(!name || !comment){
 
-Alert.alert(
-"Missing information",
-"Please add your name and review"
-);
-
 return;
 
 }
+
+
+
+setLoading(true);
 
 
 
 const {
 data:{
 user
-}
+},
+error:userError
+
 }=await supabase.auth.getUser();
 
 
 
-if(!user){
 
-Alert.alert(
-"Login required",
-"Please create an account before leaving a review"
-);
+if(userError || !user){
+
+setLoading(false);
 
 return;
 
@@ -65,7 +72,12 @@ return;
 
 
 
-const {data,error}=await supabase
+
+
+const {
+error
+
+}=await supabase
 
 .from("reviews")
 
@@ -81,20 +93,15 @@ rating:rating,
 
 comment:comment
 
-})
+});
 
-.select();
+
 
 
 
 if(error){
 
-console.log(error);
-
-Alert.alert(
-"Error",
-error.message
-);
+setLoading(false);
 
 return;
 
@@ -102,10 +109,9 @@ return;
 
 
 
-Alert.alert(
-"Success",
-"Review submitted"
-);
+
+
+setLoading(false);
 
 
 
@@ -116,14 +122,32 @@ router.back();
 
 
 
+
+
+
+
 return(
 
-<View style={styles.container}>
+<ScrollView
+
+style={styles.container}
+
+contentContainerStyle={styles.content}
+
+>
 
 
 <Text style={styles.title}>
 Leave a Review
 </Text>
+
+
+
+<Text style={styles.subtitle}>
+Share your experience with this business
+</Text>
+
+
 
 
 
@@ -141,15 +165,20 @@ onChangeText={setName}
 
 
 
+
+
 <Text style={styles.label}>
-Rating
+Your rating
 </Text>
 
 
 
 <View style={styles.stars}>
 
-{[1,2,3,4,5].map((star)=>(
+
+{
+
+[1,2,3,4,5].map((star)=>(
 
 <Pressable
 
@@ -160,14 +189,42 @@ onPress={()=>setRating(star)}
 >
 
 <Text style={styles.star}>
-{star <= rating ? "⭐":"☆"}
+
+{
+
+star <= rating
+
+?
+
+"⭐"
+
+:
+
+"☆"
+
+}
+
 </Text>
+
 
 </Pressable>
 
-))}
+))
+
+}
+
 
 </View>
+
+
+
+
+
+<Text style={styles.ratingText}>
+Rating: {rating}/5
+</Text>
+
+
 
 
 
@@ -187,22 +244,42 @@ onChangeText={setComment}
 
 
 
+
+
 <Pressable
 
 style={styles.button}
 
 onPress={submitReview}
 
+disabled={loading}
+
 >
+
+
+{
+
+loading
+
+?
+
+<ActivityIndicator color="white"/>
+
+:
 
 <Text style={styles.buttonText}>
 Submit Review
 </Text>
 
+}
+
+
 </Pressable>
 
 
-</View>
+
+
+</ScrollView>
 
 );
 
@@ -210,56 +287,95 @@ Submit Review
 
 
 
+
+
+
+
 const styles=StyleSheet.create({
 
 container:{
-padding:25
+flex:1,
+backgroundColor:"#f5f7fb"
 },
 
+
+content:{
+padding:25,
+paddingBottom:60
+},
+
+
 title:{
-fontSize:30,
+fontSize:32,
 fontWeight:"bold",
+marginBottom:10
+},
+
+
+subtitle:{
+fontSize:16,
 marginBottom:25
 },
 
+
 input:{
+backgroundColor:"white",
 borderWidth:1,
+borderColor:"#ddd",
 padding:15,
-borderRadius:10,
+borderRadius:12,
 marginBottom:15
 },
 
+
 label:{
-fontSize:18
+fontSize:18,
+fontWeight:"bold"
 },
+
 
 stars:{
 flexDirection:"row",
 marginVertical:15
 },
 
+
 star:{
-fontSize:35
+fontSize:40
 },
+
+
+ratingText:{
+marginBottom:20,
+fontWeight:"600"
+},
+
 
 textarea:{
+backgroundColor:"white",
 borderWidth:1,
+borderColor:"#ddd",
 padding:15,
-height:120,
-borderRadius:10
+height:130,
+borderRadius:12,
+textAlignVertical:"top"
 },
 
+
 button:{
-marginTop:20,
-padding:16,
-backgroundColor:"#222",
-borderRadius:10
+marginTop:25,
+backgroundColor:"#0066ff",
+padding:17,
+borderRadius:12
 },
+
 
 buttonText:{
 color:"white",
 textAlign:"center",
-fontSize:18
+fontWeight:"bold",
+fontSize:17
 }
+
 
 });
