@@ -6,8 +6,8 @@ Text,
 StyleSheet,
 ScrollView,
 Image,
-ActivityIndicator,
-Pressable
+Pressable,
+ActivityIndicator
 } from "react-native";
 
 import {
@@ -33,19 +33,35 @@ const [businesses,setBusinesses]=useState([]);
 
 const [loading,setLoading]=useState(true);
 
+const [error,setError]=useState("");
+
 
 
 
 
 useEffect(()=>{
 
-loadProfile();
-
-loadReviews();
-
-loadBusinesses();
+loadAll();
 
 },[]);
+
+
+
+
+
+async function loadAll(){
+
+
+await loadProfile();
+
+await loadReviews();
+
+await loadBusinesses();
+
+
+setLoading(false);
+
+}
 
 
 
@@ -73,7 +89,7 @@ error
 
 if(error){
 
-console.log(error);
+setError(error.message);
 
 return;
 
@@ -83,9 +99,9 @@ return;
 
 setProfile(data);
 
-setLoading(false);
 
 }
+
 
 
 
@@ -103,12 +119,7 @@ error
 
 .from("reviews")
 
-.select(`
-*,
-businesses(
-name
-)
-`)
+.select("*")
 
 .eq("user_id",id)
 
@@ -123,7 +134,7 @@ ascending:false
 
 if(error){
 
-console.log(error);
+setError(error.message);
 
 return;
 
@@ -133,7 +144,9 @@ return;
 
 setReviews(data || []);
 
+
 }
+
 
 
 
@@ -151,7 +164,7 @@ error
 
 .from("businesses")
 
-.select("*")
+.select("id,name,category")
 
 .eq("owner_id",id);
 
@@ -159,7 +172,7 @@ error
 
 if(error){
 
-console.log(error);
+setError(error.message);
 
 return;
 
@@ -168,6 +181,7 @@ return;
 
 
 setBusinesses(data || []);
+
 
 }
 
@@ -182,7 +196,7 @@ if(loading){
 
 return(
 
-<View style={styles.loading}>
+<View style={styles.center}>
 
 <ActivityIndicator size="large"/>
 
@@ -198,11 +212,32 @@ return(
 
 
 
+if(error){
+
+return(
+
+<View style={styles.center}>
+
+<Text>
+{error}
+</Text>
+
+</View>
+
+);
+
+}
+
+
+
+
+
+
 if(!profile){
 
 return(
 
-<View style={styles.loading}>
+<View style={styles.center}>
 
 <Text>
 Profile not found
@@ -247,10 +282,10 @@ style={styles.avatar}
 
 :
 
-<View style={styles.avatarPlaceholder}>
+<View style={styles.avatarFallback}>
 
-<Text style={styles.avatarText}>
-?
+<Text style={styles.avatarLetter}>
+{profile.full_name?.charAt(0) || "?"}
 </Text>
 
 </View>
@@ -259,19 +294,28 @@ style={styles.avatar}
 
 
 
+
 <Text style={styles.name}>
-{profile.full_name || "Guest User"}
+{profile.full_name || "Guest"}
 </Text>
 
 
 
-<Text style={styles.type}>
-{profile.account_type || "Guest"}
+
+<View style={styles.badge}>
+
+<Text style={styles.badgeText}>
+{profile.account_type || "guest"}
 </Text>
+
+</View>
 
 
 
 </View>
+
+
+
 
 
 
@@ -290,7 +334,6 @@ About
 </Text>
 
 
-
 </View>
 
 
@@ -299,10 +342,10 @@ About
 
 
 
-<View style={styles.stats}>
+<View style={styles.row}>
 
 
-<View style={styles.statCard}>
+<View style={styles.stat}>
 
 <Text style={styles.number}>
 {reviews.length}
@@ -316,7 +359,7 @@ Reviews
 
 
 
-<View style={styles.statCard}>
+<View style={styles.stat}>
 
 <Text style={styles.number}>
 {businesses.length}
@@ -350,19 +393,18 @@ Reviews
 
 {
 
-reviews.length===0
+reviews.length === 0
 
 ?
 
 <Text>
-No reviews yet
+No reviews written yet
 </Text>
 
 
 :
 
 reviews.map(review=>(
-
 
 <View
 
@@ -371,7 +413,6 @@ key={review.id}
 style={styles.review}
 
 >
-
 
 <Text>
 ⭐ {review.rating}/5
@@ -383,14 +424,7 @@ style={styles.review}
 </Text>
 
 
-
-<Text style={styles.small}>
-at {review.businesses?.name || "Business"}
-</Text>
-
-
 </View>
-
 
 ))
 
@@ -398,6 +432,7 @@ at {review.businesses?.name || "Business"}
 
 
 </View>
+
 
 
 
@@ -477,7 +512,7 @@ padding:20
 },
 
 
-loading:{
+center:{
 flex:1,
 justifyContent:"center",
 alignItems:"center"
@@ -486,41 +521,49 @@ alignItems:"center"
 
 header:{
 alignItems:"center",
-marginBottom:20
+marginBottom:25
 },
 
 
 avatar:{
-width:120,
-height:120,
-borderRadius:60
+width:130,
+height:130,
+borderRadius:65
 },
 
 
-avatarPlaceholder:{
-width:120,
-height:120,
-borderRadius:60,
+avatarFallback:{
+width:130,
+height:130,
+borderRadius:65,
 justifyContent:"center",
 alignItems:"center"
 },
 
 
-avatarText:{
-fontSize:40
+avatarLetter:{
+fontSize:50,
+fontWeight:"bold"
 },
 
 
 name:{
-fontSize:30,
+fontSize:32,
 fontWeight:"bold",
 marginTop:15
 },
 
 
-type:{
-marginTop:5,
-fontSize:16
+badge:{
+marginTop:10,
+paddingHorizontal:15,
+paddingVertical:6,
+borderRadius:20
+},
+
+
+badgeText:{
+fontWeight:"bold"
 },
 
 
@@ -539,14 +582,14 @@ marginBottom:15
 },
 
 
-stats:{
+row:{
 flexDirection:"row",
 gap:15,
 marginBottom:15
 },
 
 
-statCard:{
+stat:{
 flex:1,
 backgroundColor:"white",
 padding:20,
@@ -556,7 +599,7 @@ alignItems:"center"
 
 
 number:{
-fontSize:25,
+fontSize:28,
 fontWeight:"bold"
 },
 
@@ -566,11 +609,6 @@ borderTopWidth:1,
 borderColor:"#eee",
 paddingTop:15,
 marginTop:15
-},
-
-
-small:{
-marginTop:8
 },
 
 
