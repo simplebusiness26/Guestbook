@@ -581,30 +581,41 @@ No reviews yet
 
 reviews.map(review=>(
 
-<View
+<Pressable
 
 key={review.id}
 
 style={styles.review}
 
+onPress={()=>{
+if(review.user_id){
+router.push(`/profile/${review.user_id}`);
+}
+}}
+
 >
 
-<Text>
-⭐ {review.rating}
+<View style={styles.reviewHeader}>
+
+<Text style={styles.reviewName}>
+👤 {review.name || "Guest"}
 </Text>
 
+<Text style={styles.reviewStars}>
+⭐ {review.rating}/5
+</Text>
 
-<Text>
+</View>
+
+<Text style={styles.reviewComment}>
 {review.comment}
 </Text>
 
-
-<Text>
-- {review.name}
+<Text style={styles.reviewHint}>
+Tap to view profile →
 </Text>
 
-
-</View>
+</Pressable>
 
 ))
 
@@ -691,12 +702,13 @@ marginBottom:15
 
 
 review:{
+backgroundColor:"white",
+borderRadius:16,
+padding:18,
+marginTop:15,
 borderWidth:1,
-borderRadius:10,
-padding:15,
-marginTop:10
+borderColor:"#e5e7eb"
 },
-
 
 actionButton:{
 backgroundColor:"#222",
@@ -720,5 +732,32 @@ textAlign:"center",
 fontWeight:"bold"
 }
 
+reviewHeader:{
+flexDirection:"row",
+justifyContent:"space-between",
+alignItems:"center",
+marginBottom:10
+},
+
+reviewName:{
+fontSize:16,
+fontWeight:"bold"
+},
+
+reviewStars:{
+fontWeight:"bold",
+color:"#f5a623"
+},
+
+reviewComment:{
+fontSize:16,
+lineHeight:22,
+marginBottom:12
+},
+
+reviewHint:{
+color:"#0066ff",
+fontWeight:"bold"
+},
 
 });
