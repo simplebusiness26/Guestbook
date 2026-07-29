@@ -12,7 +12,7 @@ import {supabase} from "../../services/supabase";
 
 import {router} from "expo-router";
 
-import {useFocusEffect} from "@react-navigation/native";
+import {useFocusEffect} from "expo-router";
 
 import QRCodeGenerator from "../../components/QRCodeGenerator";
 

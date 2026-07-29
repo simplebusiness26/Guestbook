@@ -730,7 +730,7 @@ buttonText:{
 color:"white",
 textAlign:"center",
 fontWeight:"bold"
-}
+},
 
 reviewHeader:{
 flexDirection:"row",
