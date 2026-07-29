@@ -1,763 +1,608 @@
-
-import React,{useEffect,useState} from "react";
+import React, { useEffect, useState } from "react";
 
 import {
-View,
-Text,
-StyleSheet,
-ScrollView,
-Image,
-Pressable,
-Linking
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Pressable,
+  Linking,
+  ActivityIndicator,
 } from "react-native";
 
-import {
-useLocalSearchParams,
-router
-} from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 
-import {supabase} from "../../services/supabase";
+import { supabase } from "../../services/supabase";
 
 import ClaimButton from "../../components/ClaimButton";
 
-
-export default function BusinessPage(){
-
-
-const {id}=useLocalSearchParams();
-
-
-const [business,setBusiness]=useState(null);
-
-const [reviews,setReviews]=useState([]);
-
-const [averageRating,setAverageRating]=useState(0);
-
-const [canClaim,setCanClaim]=useState(false);
-
-const [isOwner,setIsOwner]=useState(false);
-
-
-
-
-
-useEffect(()=>{
-
-loadBusiness();
-
-loadReviews();
-
-checkUser();
-
-},[]);
-
-
-
-
-
-
-
-async function checkUser(){
-
-
-const {
-data:{
-user
-}
-}=await supabase.auth.getUser();
-
-
-
-if(!user){
-
-return;
-
+function formatReviewDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
-
-
-
-const {
-data:profile
-}=await supabase
-
-.from("profiles")
-
-.select("account_type")
-
-.eq("id",user.id)
-
-.maybeSingle();
-
-
-
-
-if(profile?.account_type==="business"){
-
-setCanClaim(true);
-
+function getInitial(name) {
+  if (!name) return "?";
+  return name.trim().charAt(0).toUpperCase();
 }
 
+export default function BusinessPage() {
+  const params = useLocalSearchParams();
+  const businessId = Array.isArray(params.id) ? params.id[0] : params.id;
 
+  const [business, setBusiness] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [canClaim, setCanClaim] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessId]);
 
-const {
-data:owned
-}=await supabase
+  async function loadAll() {
+    setLoading(true);
+    await Promise.all([loadBusiness(), loadReviews(), checkUser()]);
+    setLoading(false);
+  }
 
-.from("businesses")
+  async function checkUser() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-.select("id")
+    if (!user) {
+      return;
+    }
 
-.eq("id",id)
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("account_type")
+      .eq("id", user.id)
+      .maybeSingle();
 
-.eq("owner_id",user.id)
+    if (profile?.account_type === "business") {
+      setCanClaim(true);
+    }
 
-.maybeSingle();
+    const { data: owned } = await supabase
+      .from("businesses")
+      .select("id")
+      .eq("id", businessId)
+      .eq("owner_id", user.id)
+      .maybeSingle();
 
+    if (owned) {
+      setIsOwner(true);
+    }
+  }
 
+  async function loadBusiness() {
+    if (!businessId) return;
 
-if(owned){
+    const { data, error } = await supabase
+      .from("businesses")
+      .select("*")
+      .eq("id", businessId)
+      .single();
 
-setIsOwner(true);
+    if (error) {
+      console.log(error);
+      return;
+    }
 
+    setBusiness(data);
+  }
+
+  async function loadReviews() {
+    if (!businessId) return;
+
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("*")
+      .eq("business_id", businessId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.log(error);
+      return;
+    }
+
+    const list = data || [];
+    setReviews(list);
+
+    if (list.length > 0) {
+      const total = list.reduce((sum, item) => sum + Number(item.rating || 0), 0);
+      setAverageRating((total / list.length).toFixed(1));
+    } else {
+      setAverageRating(0);
+    }
+  }
+
+  function callBusiness() {
+    if (business?.phone) {
+      Linking.openURL(`tel:${business.phone}`);
+    }
+  }
+
+  function openWebsite() {
+    if (business?.website) {
+      let url = business.website;
+      if (!url.startsWith("http")) {
+        url = "https://" + url;
+      }
+      Linking.openURL(url);
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.loadingWrap}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.loadingText}>Loading business...</Text>
+      </View>
+    );
+  }
+
+  if (!business) {
+    return (
+      <View style={styles.loadingWrap}>
+        <Text style={styles.loadingText}>Business not found</Text>
+      </View>
+    );
+  }
+
+  const photos = [business.image, ...(Array.isArray(business.photos) ? business.photos : [])].filter(Boolean);
+  const uniquePhotos = [...new Set(photos)];
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
+      {uniquePhotos.length > 0 ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Photos</Text>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.photoRow}
+          >
+            {uniquePhotos.map((photo, index) => (
+              <Image
+                key={`${photo}-${index}`}
+                source={{ uri: photo }}
+                style={styles.photo}
+              />
+            ))}
+          </ScrollView>
+        </View>
+      ) : (
+        <View style={styles.photoFallback}>
+          <Text style={styles.photoFallbackText}>No photos uploaded yet</Text>
+        </View>
+      )}
+
+      <View style={styles.heroCard}>
+        <View style={styles.heroTopRow}>
+          <View style={styles.heroTextWrap}>
+            <Text style={styles.title}>{business.name}</Text>
+            <Text style={styles.category}>{business.category}</Text>
+
+            {Boolean(business.owner_id) ? (
+              <View style={styles.verifiedPill}>
+                <Text style={styles.verifiedText}>✓ Verified Business</Text>
+              </View>
+            ) : null}
+          </View>
+
+          {Boolean(isOwner) ? (
+            <Pressable
+              style={styles.editButtonSmall}
+              onPress={() => router.push(`/business/edit/${businessId}`)}
+            >
+              <Text style={styles.buttonText}>Edit</Text>
+            </Pressable>
+          ) : null}
+        </View>
+
+        <Text style={styles.description}>{business.description}</Text>
+
+        <View style={styles.infoCard}>
+          <Text style={styles.infoLabel}>Address</Text>
+          <Text style={styles.infoText}>📍 {business.address}</Text>
+        </View>
+
+        {Boolean(business.opening_hours) ? (
+          <View style={styles.infoCard}>
+            <Text style={styles.infoLabel}>Opening hours</Text>
+            <Text style={styles.infoText}>🕒 {business.opening_hours}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>
+              ⭐ {averageRating ? averageRating : "—"}
+            </Text>
+            <Text style={styles.statLabel}>Average rating</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{reviews.length}</Text>
+            <Text style={styles.statLabel}>Reviews</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Actions</Text>
+
+        <View style={styles.actionRow}>
+          {Boolean(business.phone) ? (
+            <Pressable style={styles.actionButtonHalf} onPress={callBusiness}>
+              <Text style={styles.buttonText}>📞 Call Business</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.actionPlaceholder} />
+          )}
+
+          {Boolean(business.website) ? (
+            <Pressable style={styles.actionButtonHalf} onPress={openWebsite}>
+              <Text style={styles.buttonText}>🌐 Visit Website</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.actionPlaceholder} />
+          )}
+        </View>
+
+        <Pressable
+          style={styles.reviewButton}
+          onPress={() => router.push(`/business/review/${businessId}`)}
+        >
+          <Text style={styles.buttonText}>⭐ Leave a Review</Text>
+        </Pressable>
+
+        {Boolean(canClaim && !business.owner_id) ? (
+          <ClaimButton businessId={businessId} />
+        ) : null}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Reviews</Text>
+
+        {reviews.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>No reviews yet</Text>
+            <Text style={styles.emptySubtext}>
+              Be the first to share your experience.
+            </Text>
+          </View>
+        ) : (
+          reviews.map((review) => (
+            <Pressable
+              key={review.id}
+              style={({ pressed }) => [
+                styles.reviewCard,
+                !review.user_id && styles.reviewCardMuted,
+                pressed && styles.reviewCardPressed,
+              ]}
+              onPress={() => {
+                if (review.user_id) {
+                  router.push(`/profile/${review.user_id}`);
+                }
+              }}
+            >
+              <View style={styles.reviewHeader}>
+                <View style={styles.reviewLeft}>
+                  <View style={styles.reviewAvatar}>
+                    <Text style={styles.reviewAvatarText}>
+                      {getInitial(review.name)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.reviewNameWrap}>
+                    <Text style={styles.reviewName}>
+                      {review.name || "Guest"}
+                    </Text>
+                    <Text style={styles.reviewDate}>
+                      {formatReviewDate(review.created_at)}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={styles.reviewStars}>⭐ {review.rating}/5</Text>
+              </View>
+
+              <Text style={styles.reviewComment}>{review.comment}</Text>
+
+              <Text style={styles.reviewHint}>
+                {review.user_id ? "Tap to view profile →" : ""}
+              </Text>
+            </Pressable>
+          ))
+        )}
+      </View>
+    </ScrollView>
+  );
 }
 
-
-}
-
-
-
-
-
-
-
-
-async function loadBusiness(){
-
-
-const {
-data,
-error
-}=await supabase
-
-.from("businesses")
-
-.select("*")
-
-.eq("id",id)
-
-.single();
-
-
-
-if(error){
-
-console.log(error);
-
-return;
-
-}
-
-
-
-setBusiness(data);
-
-
-}
-
-
-
-
-
-
-
-
-async function loadReviews(){
-
-
-const {
-data,
-error
-}=await supabase
-
-.from("reviews")
-
-.select("*")
-
-.eq("business_id",id)
-
-.order(
-"created_at",
-{
-ascending:false
-}
-);
-
-
-
-if(error){
-
-console.log(error);
-
-return;
-
-}
-
-
-
-const list=data || [];
-
-setReviews(list);
-
-
-
-if(list.length>0){
-
-
-const total=list.reduce(
-
-(sum,item)=>{
-
-return sum + Number(item.rating || 0);
-
-},
-
-0
-
-);
-
-
-setAverageRating(
-
-(total/list.length).toFixed(1)
-
-);
-
-
-}
-
-
-}
-
-
-
-
-
-
-
-
-function callBusiness(){
-
-
-if(business.phone){
-
-Linking.openURL(
-`tel:${business.phone}`
-);
-
-}
-
-
-}
-
-
-
-
-
-
-function openWebsite(){
-
-
-if(business.website){
-
-
-let url=business.website;
-
-
-if(!url.startsWith("http")){
-
-url="https://"+url;
-
-}
-
-
-Linking.openURL(url);
-
-
-}
-
-
-}
-
-
-
-
-
-
-
-
-if(!business){
-
-return(
-
-<Text>
-Loading...
-</Text>
-
-);
-
-}
-
-
-
-
-
-
-
-const photos=[
-
-business.image,
-
-...(business.photos || [])
-
-].filter(Boolean);
-
-
-
-
-
-
-
-return(
-
-<ScrollView style={styles.container}>
-
-
-
-{
-photos.length > 0 ? (
-
-<View>
-
-<Text style={styles.heading}>
-Photos
-</Text>
-
-
-<ScrollView
-horizontal
-showsHorizontalScrollIndicator={false}
->
-
-
-{
-photos.map((photo,index)=>(
-
-<Image
-
-key={index}
-
-source={{
-uri:photo
-}}
-
-style={styles.photo}
-
-/>
-
-))
-
-}
-
-
-</ScrollView>
-
-
-</View>
-
-) : null
-}
-
-
-
-
-
-
-<Text style={styles.title}>
-{business.name}
-</Text>
-
-
-
-
-
-{
-Boolean(business.owner_id) ? (
-
-<Text style={styles.verified}>
-✓ Verified Business
-</Text>
-
-) : null
-}
-
-
-
-
-
-
-{
-Boolean(isOwner) ? (
-
-<Pressable
-
-style={styles.editButton}
-
-onPress={()=>router.push(`/business/edit/${id}`)}
-
->
-
-<Text style={styles.buttonText}>
-Edit Business
-</Text>
-
-</Pressable>
-
-) : null
-}
-
-
-
-
-
-
-
-<Text style={styles.category}>
-{business.category}
-</Text>
-
-
-
-
-
-<Text style={styles.description}>
-{business.description}
-</Text>
-
-
-
-
-
-<Text>
-📍 {business.address}
-</Text>
-
-
-
-
-
-
-{
-Boolean(business.opening_hours) ? (
-
-<Text style={styles.info}>
-🕒 {business.opening_hours}
-</Text>
-
-) : null
-}
-
-
-
-
-
-
-
-{
-Boolean(business.phone) ? (
-
-<Pressable
-
-style={styles.actionButton}
-
-onPress={callBusiness}
-
->
-
-<Text style={styles.buttonText}>
-📞 Call Business
-</Text>
-
-</Pressable>
-
-) : null
-}
-
-
-
-
-
-
-
-{
-Boolean(business.website) ? (
-
-<Pressable
-
-style={styles.actionButton}
-
-onPress={openWebsite}
-
->
-
-<Text style={styles.buttonText}>
-🌐 Visit Website
-</Text>
-
-</Pressable>
-
-) : null
-}
-
-
-
-
-
-
-
-<Text style={styles.rating}>
-⭐ {averageRating ? averageRating : "No rating"}
-</Text>
-
-
-
-
-
-<Text>
-Reviews: {reviews.length}
-</Text>
-
-
-
-
-
-
-{
-Boolean(canClaim && !business.owner_id) ? (
-
-<ClaimButton
-
-businessId={id}
-
-/>
-
-) : null
-}
-
-
-
-
-
-
-<Text style={styles.heading}>
-Reviews
-</Text>
-
-
-
-
-
-
-
-{
-reviews.length===0 ? (
-
-<Text>
-No reviews yet
-</Text>
-
-) : (
-
-reviews.map(review=>(
-
-<Pressable
-
-key={review.id}
-
-style={styles.review}
-
-onPress={()=>{
-if(review.user_id){
-router.push(`/profile/${review.user_id}`);
-}
-}}
-
->
-
-<View style={styles.reviewHeader}>
-
-<Text style={styles.reviewName}>
-👤 {review.name || "Guest"}
-</Text>
-
-<Text style={styles.reviewStars}>
-⭐ {review.rating}/5
-</Text>
-
-</View>
-
-<Text style={styles.reviewComment}>
-{review.comment}
-</Text>
-
-<Text style={styles.reviewHint}>
-Tap to view profile →
-</Text>
-
-</Pressable>
-
-))
-
-)
-
-}
-
-
-
-
-</ScrollView>
-
-);
-
-}
-
-
-
-
-
-
-
-
-
-const styles=StyleSheet.create({
-
-container:{
-padding:20
-},
-
-
-photo:{
-width:250,
-height:180,
-borderRadius:15,
-marginRight:10,
-marginBottom:20
-},
-
-
-title:{
-fontSize:30,
-fontWeight:"bold",
-marginTop:15
-},
-
-
-verified:{
-fontSize:16,
-fontWeight:"bold",
-marginTop:10
-},
-
-
-category:{
-fontSize:18,
-marginTop:10
-},
-
-
-description:{
-marginVertical:20
-},
-
-
-info:{
-marginTop:10
-},
-
-
-rating:{
-fontSize:18,
-fontWeight:"bold",
-marginTop:15
-},
-
-
-heading:{
-fontSize:25,
-fontWeight:"bold",
-marginTop:30,
-marginBottom:15
-},
-
-
-review:{
-backgroundColor:"white",
-borderRadius:16,
-padding:18,
-marginTop:15,
-borderWidth:1,
-borderColor:"#e5e7eb"
-},
-
-actionButton:{
-backgroundColor:"#222",
-padding:15,
-borderRadius:10,
-marginTop:15
-},
-
-
-editButton:{
-backgroundColor:"#0066ff",
-padding:15,
-borderRadius:10,
-marginTop:15
-},
-
-
-buttonText:{
-color:"white",
-textAlign:"center",
-fontWeight:"bold"
-}
-
-reviewHeader:{
-flexDirection:"row",
-justifyContent:"space-between",
-alignItems:"center",
-marginBottom:10
-},
-
-reviewName:{
-fontSize:16,
-fontWeight:"bold"
-},
-
-reviewStars:{
-fontWeight:"bold",
-color:"#f5a623"
-},
-
-reviewComment:{
-fontSize:16,
-lineHeight:22,
-marginBottom:12
-},
-
-reviewHint:{
-color:"#0066ff",
-fontWeight:"bold"
-},
-
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f4f6fb",
+  },
+  content: {
+    padding: 16,
+    paddingBottom: 36,
+  },
+  loadingWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f4f6fb",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#667085",
+  },
+  section: {
+    marginBottom: 18,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#101828",
+    marginBottom: 12,
+  },
+  photoRow: {
+    paddingRight: 4,
+  },
+  photo: {
+    width: 290,
+    height: 200,
+    borderRadius: 18,
+    marginRight: 12,
+    backgroundColor: "#e9edf5",
+  },
+  photoFallback: {
+    height: 170,
+    borderRadius: 20,
+    backgroundColor: "#e9edf5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 18,
+  },
+  photoFallbackText: {
+    color: "#667085",
+    fontWeight: "600",
+  },
+  heroCard: {
+    backgroundColor: "white",
+    borderRadius: 22,
+    padding: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+    marginBottom: 18,
+  },
+  heroTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
+  heroTextWrap: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: "800",
+    color: "#101828",
+    lineHeight: 36,
+  },
+  category: {
+    marginTop: 8,
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#344054",
+  },
+  verifiedPill: {
+    alignSelf: "flex-start",
+    backgroundColor: "#ecfdf3",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 10,
+  },
+  verifiedText: {
+    color: "#027a48",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  editButtonSmall: {
+    backgroundColor: "#0066ff",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+  },
+  description: {
+    marginTop: 14,
+    color: "#475467",
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  infoCard: {
+    marginTop: 14,
+    backgroundColor: "#f9fafb",
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#eaecf0",
+  },
+  infoLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#667085",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  infoText: {
+    fontSize: 15,
+    color: "#101828",
+    lineHeight: 22,
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 16,
+  },
+  statCard: {
+    width: "48%",
+    backgroundColor: "#f9fafb",
+    borderRadius: 16,
+    padding: 14,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#eaecf0",
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#101828",
+  },
+  statLabel: {
+    marginTop: 4,
+    fontSize: 13,
+    color: "#667085",
+    fontWeight: "600",
+  },
+  actionRow: {
+    flexDirection: "row",
+    marginBottom: 12,
+  },
+  actionButtonHalf: {
+    flex: 1,
+    backgroundColor: "#222",
+    padding: 16,
+    borderRadius: 16,
+  },
+  actionPlaceholder: {
+    flex: 1,
+  },
+  reviewButton: {
+    backgroundColor: "#0066ff",
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  buttonText: {
+    color: "white",
+    textAlign: "center",
+    fontWeight: "800",
+    fontSize: 15,
+  },
+  emptyCard: {
+    backgroundColor: "white",
+    borderRadius: 18,
+    padding: 18,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#eaecf0",
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#101828",
+  },
+  emptySubtext: {
+    marginTop: 6,
+    color: "#667085",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  reviewCard: {
+    backgroundColor: "white",
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#eaecf0",
+  },
+  reviewCardMuted: {
+    opacity: 0.9,
+  },
+  reviewCardPressed: {
+    transform: [{ scale: 0.99 }],
+  },
+  reviewHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 10,
+  },
+  reviewLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    paddingRight: 12,
+  },
+  reviewAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#dbeafe",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  reviewAvatarText: {
+    fontWeight: "800",
+    color: "#1d4ed8",
+    fontSize: 16,
+  },
+  reviewNameWrap: {
+    flex: 1,
+  },
+  reviewName: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#101828",
+  },
+  reviewDate: {
+    marginTop: 2,
+    fontSize: 12,
+    color: "#667085",
+    fontWeight: "600",
+  },
+  reviewStars: {
+    fontWeight: "800",
+    color: "#f5a623",
+  },
+  reviewComment: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: "#344054",
+  },
+  reviewHint: {
+    marginTop: 12,
+    fontSize: 12,
+    color: "#0066ff",
+    fontWeight: "700",
+  },
 });
