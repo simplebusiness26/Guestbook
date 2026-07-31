@@ -14,17 +14,13 @@ import {router} from "expo-router";
 
 export default function Profile(){
 
-
 const [profile,setProfile]=useState(null);
 
 const [loading,setLoading]=useState(true);
 
-
-
 useEffect(()=>{
 
 loadProfile();
-
 
 const {
 data:{
@@ -37,24 +33,17 @@ loadProfile();
 
 });
 
-
 return()=>{
 
 subscription.unsubscribe();
 
 };
 
-
 },[]);
-
-
-
 
 async function loadProfile(){
 
-
 setLoading(true);
-
 
 const {
 data:{
@@ -62,8 +51,6 @@ user
 }
 
 }=await supabase.auth.getUser();
-
-
 
 if(!user){
 
@@ -74,8 +61,6 @@ setLoading(false);
 return;
 
 }
-
-
 
 const {
 data,
@@ -90,8 +75,6 @@ error
 
 .single();
 
-
-
 if(error){
 
 console.log("Profile error:",error.message);
@@ -104,25 +87,15 @@ return;
 
 }
 
-
-
 setProfile(data);
 
 setLoading(false);
 
-
 }
-
-
-
-
 
 async function logout(){
 
-
 const {error}=await supabase.auth.signOut();
-
-
 
 if(error){
 
@@ -132,18 +105,11 @@ return;
 
 }
 
-
 setProfile(null);
-
 
 router.replace("/");
 
-
 }
-
-
-
-
 
 if(loading){
 
@@ -161,10 +127,6 @@ Loading profile...
 
 }
 
-
-
-
-
 if(!profile){
 
 return(
@@ -174,7 +136,6 @@ return(
 <Text style={styles.title}>
 No profile found
 </Text>
-
 
 <Pressable
 style={styles.button}
@@ -187,30 +148,21 @@ Login
 
 </Pressable>
 
-
 </View>
 
 );
 
 }
 
-
-
-
-
 return(
 
 <View style={styles.container}>
-
 
 <Text style={styles.title}>
 My Profile
 </Text>
 
-
-
 <View style={styles.card}>
-
 
 <Text style={styles.label}>
 Name
@@ -220,9 +172,6 @@ Name
 {profile.full_name || "No name"}
 </Text>
 
-
-
-
 <Text style={styles.label}>
 Email
 </Text>
@@ -230,9 +179,6 @@ Email
 <Text style={styles.value}>
 {profile.email}
 </Text>
-
-
-
 
 <Text style={styles.label}>
 Phone
@@ -242,58 +188,36 @@ Phone
 {profile.phone || "No phone added"}
 </Text>
 
-
-
-
 <Text style={styles.label}>
 Account Type
 </Text>
 
-
 <Text style={styles.value}>
 
 {
-profile.account_type==="business"
+profile.account_type==="manager"
 
 ?
 
-"🏪 Business Owner"
+"📊 Manager"
 
 :
 
-profile.account_type==="host"
-
-?
-
-"🏠 Property Host"
-
-:
-
-"👤 Guest"
+"🧭 Explorer"
 
 }
 
 </Text>
 
-
-
-
 <Text style={styles.label}>
 Bio
 </Text>
-
 
 <Text style={styles.value}>
 {profile.bio || "No bio added yet"}
 </Text>
 
-
-
 </View>
-
-
-
-
 
 <Pressable
 
@@ -309,26 +233,15 @@ Edit Profile
 
 </Pressable>
 
-
-
-
-
 <Pressable
 
 style={styles.button}
 
 onPress={()=>{
 
-
-if(profile.account_type==="business"){
+if(profile.account_type==="manager"){
 
 router.push("/business/dashboard");
-
-}
-
-else if(profile.account_type==="host"){
-
-router.push("/property/dashboard");
 
 }
 
@@ -338,22 +251,15 @@ router.push("/map");
 
 }
 
-
 }}
 
 >
-
 
 <Text style={styles.buttonText}>
 Open Dashboard
 </Text>
 
-
 </Pressable>
-
-
-
-
 
 <Pressable
 
@@ -369,17 +275,11 @@ Logout
 
 </Pressable>
 
-
-
 </View>
 
 );
 
 }
-
-
-
-
 
 const styles=StyleSheet.create({
 
@@ -388,13 +288,11 @@ flex:1,
 padding:30
 },
 
-
 title:{
 fontSize:32,
 fontWeight:"bold",
 marginBottom:25
 },
-
 
 card:{
 borderWidth:1,
@@ -402,19 +300,16 @@ borderRadius:12,
 padding:20
 },
 
-
 label:{
 fontSize:14,
 color:"#777",
 marginTop:15
 },
 
-
 value:{
 fontSize:18,
 marginTop:5
 },
-
 
 button:{
 backgroundColor:"#222",
@@ -423,13 +318,11 @@ borderRadius:10,
 marginTop:15
 },
 
-
 buttonText:{
 color:"white",
 textAlign:"center",
 fontWeight:"bold"
 },
-
 
 logout:{
 backgroundColor:"#cc0000",
@@ -438,12 +331,10 @@ borderRadius:10,
 marginTop:15
 },
 
-
 logoutText:{
 color:"white",
 textAlign:"center",
 fontWeight:"bold"
 }
-
 
 });
