@@ -116,7 +116,7 @@ export default function BusinessPage() {
       .eq("id", user.id)
       .maybeSingle();
 
-    if (profile?.account_type === "business") {
+    if (profile?.account_type === "manager") {
       setCanClaim(true);
     } else {
       setCanClaim(false);
