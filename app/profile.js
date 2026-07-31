@@ -241,7 +241,7 @@ onPress={()=>{
 
 if(profile.account_type==="manager"){
 
-router.push("/business/dashboard");
+router.push("/manager/dashboard");
 
 }
 
