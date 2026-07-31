@@ -14,12 +14,9 @@ import {supabase} from "../services/supabase";
 
 export default function Menu(){
 
-
 const [userType,setUserType]=useState(null);
 
 const [loggedIn,setLoggedIn]=useState(false);
-
-
 
 useEffect(()=>{
 
@@ -27,10 +24,7 @@ loadUser();
 
 },[]);
 
-
-
 async function loadUser(){
-
 
 const {
 data:{
@@ -38,8 +32,6 @@ user
 }
 
 }=await supabase.auth.getUser();
-
-
 
 if(!user){
 
@@ -49,11 +41,7 @@ return;
 
 }
 
-
-
 setLoggedIn(true);
-
-
 
 const {
 data
@@ -67,8 +55,6 @@ data
 .eq("id",user.id)
 
 .single();
-
-
 
 if(data){
 
@@ -86,34 +72,23 @@ setUserType(data.account_type);
 
 }
 
-
 }
-
-
 
 async function logout(){
 
-
 await supabase.auth.signOut();
-
 
 router.replace("/");
 
-
 }
-
-
 
 return(
 
 <View style={styles.container}>
 
-
 <Text style={styles.title}>
 Menu
 </Text>
-
-
 
 <Pressable
 
@@ -128,8 +103,6 @@ onPress={()=>router.push("/map")}
 </Text>
 
 </Pressable>
-
-
 
 {
 loggedIn &&
@@ -150,10 +123,8 @@ onPress={()=>router.push("/profile")}
 
 }
 
-
-
 {
-userType==="business" &&
+userType==="manager" &&
 
 <Pressable
 
@@ -164,35 +135,12 @@ onPress={()=>router.push("/business/dashboard")}
 >
 
 <Text style={styles.text}>
-🏪 Business Dashboard
+📊 Manager Dashboard
 </Text>
 
 </Pressable>
 
 }
-
-
-
-{
-userType==="host" &&
-
-<Pressable
-
-style={styles.item}
-
-onPress={()=>router.push("/property/dashboard")}
-
->
-
-<Text style={styles.text}>
-🏠 Property Dashboard
-</Text>
-
-</Pressable>
-
-}
-
-
 
 {
 userType==="admin" &&
@@ -213,8 +161,6 @@ onPress={()=>router.push("/admin/claims")}
 
 }
 
-
-
 {
 !loggedIn &&
 
@@ -234,8 +180,6 @@ Login
 
 </Pressable>
 
-
-
 <Pressable
 
 style={styles.item}
@@ -253,8 +197,6 @@ Create Account
 </>
 
 }
-
-
 
 {
 loggedIn &&
@@ -275,15 +217,11 @@ Logout
 
 }
 
-
-
 </View>
 
 );
 
 }
-
-
 
 const styles=StyleSheet.create({
 
@@ -292,13 +230,11 @@ flex:1,
 padding:30
 },
 
-
 title:{
 fontSize:32,
 fontWeight:"bold",
 marginBottom:30
 },
-
 
 item:{
 backgroundColor:"#222",
@@ -307,13 +243,11 @@ borderRadius:10,
 marginBottom:15
 },
 
-
 text:{
 color:"white",
 fontWeight:"bold",
 textAlign:"center"
 },
-
 
 logout:{
 backgroundColor:"#cc0000",
@@ -322,12 +256,10 @@ borderRadius:10,
 marginTop:20
 },
 
-
 logoutText:{
 color:"white",
 fontWeight:"bold",
 textAlign:"center"
 }
-
 
 });
