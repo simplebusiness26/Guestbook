@@ -104,7 +104,7 @@ if(!accountType){
 
 Alert.alert(
 "Choose account type",
-"Please select Guest, Business Owner or Property Host"
+"Please select explorer or manager"
 );
 
 return;
@@ -198,7 +198,7 @@ setLoading(false);
 
 Alert.alert(
 "Account created",
-"Welcome to Guestbook"
+"Welcome to xplorer"
 );
 
 
