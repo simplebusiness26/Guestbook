@@ -15,25 +15,18 @@ import {router} from "expo-router";
 
 import {supabase} from "../../services/supabase";
 
-
 const ACCOUNT_TYPES=[
 {
-value:"guest",
-label:"Guest",
-desc:"Explore & review local places"
+value:"explorer",
+label:"Explorer",
+desc:"Discover places, join activities and leave reviews"
 },
 {
-value:"business",
-label:"Business Owner",
-desc:"List and manage your business"
-},
-{
-value:"host",
-label:"Property Host",
-desc:"List your Airbnb / rental"
+value:"manager",
+label:"Manager",
+desc:"Manage businesses, properties, activities and events"
 }
 ];
-
 
 export default function Signup(){
 
