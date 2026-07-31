@@ -296,7 +296,7 @@ style={styles.avatar}
 
 
 <Text style={styles.name}>
-{profile.full_name || "Guest"}
+{profile.full_name || "explorer"}
 </Text>
 
 
