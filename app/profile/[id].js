@@ -305,7 +305,7 @@ style={styles.avatar}
 <View style={styles.badge}>
 
 <Text style={styles.badgeText}>
-{profile.account_type || "guest"}
+{profile.account_type || "explorer"}
 </Text>
 
 </View>
