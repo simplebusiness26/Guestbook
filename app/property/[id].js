@@ -135,7 +135,7 @@ export default function PropertyDetails() {
       setCanClaim(false);
     } else {
       setCanClaim(
-        profile?.account_type === "host"
+        profile?.account_type === "manager"
       );
     }
 
